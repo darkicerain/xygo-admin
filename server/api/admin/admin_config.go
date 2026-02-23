@@ -1,0 +1,55 @@
+package admin
+
+import (
+	"github.com/gogf/gf/v2/frame/g"
+
+	"xygo/internal/model/input/adminin"
+)
+
+// ===================== 配置 Schema =====================
+
+type ConfigSchemaReq struct {
+	g.Meta `path:"/admin/config/schema" method:"get" tags:"AdminConfig" summary:"系统配置schema"`
+}
+
+type ConfigSchemaRes struct {
+	List []adminin.ConfigSchemaItem `json:"list"`
+}
+
+// ===================== 配置列表 =====================
+
+type ConfigListReq struct {
+	g.Meta `path:"/admin/config/list" method:"get" tags:"AdminConfig" summary:"获取配置列表"`
+	adminin.ConfigListInp
+}
+
+type ConfigListRes struct {
+	adminin.ConfigListModel
+}
+
+// ===================== 保存配置 =====================
+
+type ConfigSaveReq struct {
+	g.Meta `path:"/admin/config/save" method:"post" tags:"AdminConfig" summary:"保存配置"`
+	adminin.ConfigSaveInp
+}
+
+type ConfigSaveRes struct{}
+
+// ===================== 创建配置 =====================
+
+type ConfigCreateReq struct {
+	g.Meta `path:"/admin/config/create" method:"post" tags:"AdminConfig" summary:"创建配置项"`
+	adminin.ConfigCreateInp
+}
+
+type ConfigCreateRes struct{}
+
+// ===================== 删除配置 =====================
+
+type ConfigDeleteReq struct {
+	g.Meta `path:"/admin/config/delete" method:"post" tags:"AdminConfig" summary:"删除配置项"`
+	adminin.ConfigDeleteInp
+}
+
+type ConfigDeleteRes struct{}

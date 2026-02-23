@@ -1,0 +1,149 @@
+/**
+ * 站点信息状态管理模块
+ *
+ * 提供站点配置信息的统一管理
+ *
+ * @module store/modules/site
+ */
+import { defineStore } from 'pinia'
+import { ref } from 'vue'
+import { fetchSiteIndex, type SiteInfo } from '@/api/site'
+
+/**
+ * 站点信息状态管理
+ */
+export const useSiteStore = defineStore(
+  'siteStore',
+  () => {
+    // 站点信息
+    const siteInfo = ref<Partial<SiteInfo>>({
+      siteName: 'XYGo Admin',
+      siteSubtitle: '基于GoFrame和Vue3的后台管理系统',
+      logo: '',
+      themeColor: '#1890ff',
+      description: '',
+      icp: '',
+      timezone: 'Asia/Shanghai',
+      closed: '0'
+    })
+
+    // 是否已加载
+    const loaded = ref(false)
+
+    // 时区模式：从 .env 配置读取，client=浏览器本地时区 | server=后端配置时区
+    const envMode = (import.meta.env.VITE_TIMEZONE_MODE || 'client') as 'client' | 'server'
+    const timeZoneMode = ref<'client' | 'server'>(envMode)
+
+    // 前台配置
+    const frontendConfig = ref({
+      userCenterEnabled: true,
+      portalEnabled: true,
+      registerEnabled: true
+    })
+
+    /**
+     * 加载站点信息
+     */
+    const loadSiteInfo = async (): Promise<void> => {
+      try {
+        const res = await fetchSiteIndex()
+        siteInfo.value = res
+        loaded.value = true
+
+        // 同步后端开关到前台配置
+        frontendConfig.value.userCenterEnabled = res.openMemberCenter !== false
+      } catch (error) {
+        console.error('[SiteStore] 加载站点信息失败:', error)
+        // 加载失败时使用默认值
+      }
+    }
+
+    /**
+     * 获取站点名称
+     */
+    const getSiteName = (): string => {
+      return siteInfo.value.siteName || 'XYGo Admin'
+    }
+
+    /**
+     * 获取站点副标题
+     */
+    const getSiteSubtitle = (): string => {
+      return siteInfo.value.siteSubtitle || ''
+    }
+
+    /**
+     * 获取Logo
+     */
+    const getLogo = (): string => {
+      return siteInfo.value.logo || ''
+    }
+
+    /**
+     * 获取主题色
+     */
+    const getThemeColor = (): string => {
+      return siteInfo.value.themeColor || '#1890ff'
+    }
+
+    /**
+     * 是否启用用户中心
+     */
+    const isUserCenterEnabled = (): boolean => {
+      return frontendConfig.value.userCenterEnabled
+    }
+
+    /**
+     * 是否启用门户首页
+     */
+    const isPortalEnabled = (): boolean => {
+      return frontendConfig.value.portalEnabled
+    }
+
+    /**
+     * 获取时区
+     */
+    const getTimezone = (): string => {
+      return siteInfo.value.timezone || 'Asia/Shanghai'
+    }
+
+    /**
+     * 获取时区模式
+     */
+    const getTimeZoneMode = (): 'client' | 'server' => {
+      return timeZoneMode.value
+    }
+
+    /**
+     * 设置时区模式
+     */
+    const setTimeZoneMode = (mode: 'client' | 'server') => {
+      timeZoneMode.value = mode
+    }
+
+    /**
+     * 设置前台配置
+     */
+    const setFrontendConfig = (config: Partial<typeof frontendConfig.value>) => {
+      frontendConfig.value = { ...frontendConfig.value, ...config }
+    }
+
+    return {
+      siteInfo,
+      loaded,
+      frontendConfig,
+      timeZoneMode,
+      loadSiteInfo,
+      getSiteName,
+      getSiteSubtitle,
+      getLogo,
+      getThemeColor,
+      getTimezone,
+      getTimeZoneMode,
+      setTimeZoneMode,
+      isUserCenterEnabled,
+      isPortalEnabled,
+      setFrontendConfig
+    }
+  }
+)

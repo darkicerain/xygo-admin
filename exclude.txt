@@ -1,0 +1,10 @@
+hotgo-v2.0\
+node_modules\
+.git\
+server\logs\
+server\main.exe
+server\main.exe~
+web\node_modules\
+web\.nuxt\
+web\dist\
+.cursor\

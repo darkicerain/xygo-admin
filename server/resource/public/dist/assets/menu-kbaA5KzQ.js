@@ -1,0 +1,1 @@
+import{F as e}from"./index-CfMQOaVr.js";function r(r){return e.get({url:"/member/menu/tree",params:r})}function t(r){return e.post({url:"/member/menu/save",data:r})}function n(r){return e.post({url:"/member/menu/delete",data:{id:r}})}export{n as d,r as g,t as s};

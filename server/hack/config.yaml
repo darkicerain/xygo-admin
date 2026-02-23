@@ -1,0 +1,48 @@
+
+# CLI tool, only in development environment.
+# https://goframe.org/docs/cli
+gfcli:
+  build:
+    name:    "xygo"                                                            # 可执行文件名称
+    arch:    "amd64"                                                           # 架构：386 / amd64 / arm / all
+    system:  "linux"                                                           # 平台：linux / darwin / windows / all
+    mod:     "none"
+    cgo:     0
+    # packSrc: "resource"                                                      # 全量打包（配置内置，单文件部署，不可外部改配置）
+    packSrc: "resource/public,resource/generate,resource/template,resource/captcha"  # 配置外置（部署时可修改 config.yaml）
+    packDst: "internal/packed/packed.go"                                       # 打包生成的 Go 文件路径
+    version: ""
+    output:  "./temp/xygo"                                                     # 输出路径
+    extra:   ""
+
+  gen:
+    dao:
+    # 切换数据库：二选一，启用一行、注释另一行（typeMapping 两边通用不用动）
+    # - link: "mysql:xygonew:123456@tcp(127.0.0.1:3306)/xygonew?loc=Local&parseTime=true"  # MySQL
+      - link: "pgsql:postgres:123456@tcp(127.0.0.1:5432)/xygonew"                          # PG（当前）
+        group: "default"              # 与 database.default 对应
+        tables: ""                    # 为空表示当前库所有表
+        removePrefix: "xy_"           # 去掉表前缀生成 dao/entity 名称
+        descriptionTag: true          # 使用表/字段注释作为结构体注释
+        jsonCase: "CamelLower"        # json 字段采用 lowerCamel
+        gJsonSupport: true
+        clear: true                   # 每次生成前清空旧的 dao/model
+        # typeMapping 两边通用，无需随数据库切换而修改：
+        # - PG 的 int8(bigint) 默认生成 int64，加此映射统一为 uint64（与 MySQL bigint unsigned 一致）
+        # - MySQL 的 bigint unsigned 本身就是 uint64，加此映射无副作用
+        # - int4 不映射：PG 生成 int，MySQL 的 int unsigned 生成 uint，差异通过 logic 层显式转换兼容
+        typeMapping:
+          int8:
+            type: uint64
+
+    service:
+      srcFolder: "internal/logic"       # logic 源码目录
+      dstFolder: "internal/service"     # service 生成目录
+      dstFileNameCase: "Snake"          # 文件名格式
+      stPattern: "s([A-Z]\\w+)"         # 匹配 logic 结构体名称
+      clear: false                      # 不清空已有文件
+
+  docker:
+    build: "-a amd64 -s linux -p temp -ew"
+    tagPrefixes:
+      - my.image.pub/my-app
