@@ -1,35 +1,33 @@
 /**
  * 网站链接常量配置
  * 集中管理便于维护和更新链接地址
- *
- * @module utils/constants/links
- * @author Art Design Pro Team
  */
 export const WEB_LINKS = {
-  // Github 主页
-  GITHUB_HOME: 'https://github.com/Daymychen/art-design-pro',
+  // 项目官网
+  HOME: 'https://www.xygoadmin.com',
 
-  // 项目 Github 主页
-  GITHUB: 'https://github.com/Daymychen/art-design-pro',
+  // GitHub 仓库
+  GITHUB: 'https://github.com/z312193608/xygo-admin',
+  GITHUB_HOME: 'https://github.com/z312193608/xygo-admin',
 
-  // 个人博客
-  BLOG: 'https://www.artd.pro',
+  // Gitee 仓库
+  GITEE: 'https://gitee.com/a751300685a/xygo-admin',
 
-  // 项目文档
-  DOCS: 'https://www.artd.pro/docs/zh/',
+  // 文档中心（门户 /docs 页面）
+  DOCS: '/docs',
 
-  // 精简版本
-  LiteVersion: 'https://www.artd.pro/docs/zh/guide/lite-version.html',
+  // 在线演示
+  DEMO: 'https://www.xygoadmin.com',
 
-  // v2.6.1版本
-  OldVersion: 'https://www.artd.pro/v2/',
+  // 精简版本（暂无）
+  LiteVersion: '',
 
-  // 项目社区
-  COMMUNITY: 'https://www.artd.pro/docs/zh/community/communicate.html',
+  // 旧版本（暂无）
+  OldVersion: '',
 
-  // 个人 Bilibili 主页
-  BILIBILI: 'https://space.bilibili.com/425500936?spm_id_from=333.1007.0.0',
+  // 项目社区（暂无，后续主版本提供）
+  COMMUNITY: '',
 
   // 项目介绍
-  INTRODUCE: 'https://www.artd.pro/docs/zh/guide/introduce.html'
+  INTRODUCE: 'https://www.xygoadmin.com'
 }

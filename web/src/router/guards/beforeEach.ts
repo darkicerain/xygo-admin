@@ -54,6 +54,7 @@ import { ApiStatus } from '@/utils/http/status'
 import { isHttpError } from '@/utils/http/error'
 import { RouteRegistry, MenuProcessor, IframeRouteManager, RoutePermissionValidator } from '../core'
 import type { AppRouteRecord } from '@/types/router'
+import { loadFrontendRoutes, isFrontendRoutesLoaded } from '../frontend/loader'
 
 // 路由注册器实例
 let routeRegistry: RouteRegistry | null = null
@@ -187,7 +188,23 @@ async function handleRouteGuard(
     return
   }
 
-  // 5. 处理已匹配的路由
+  // 5. 前台动态路由：如果命中了全局 404 catch-all，但实际可能是尚未注册的前台页面
+  //    先加载前台菜单并注册路由，再重新导航到目标路径
+  //    仅对非 admin 路由生效，不影响后台任何逻辑
+  if (to.name === 'Exception404' && !isAdminRoute(to) && !isFrontendRoutesLoaded()) {
+    loadingService.showLoading()
+    try {
+      const loaded = await loadFrontendRoutes(router)
+      if (loaded) {
+        next({ path: to.fullPath, replace: true })
+        return
+      }
+    } finally {
+      loadingService.hideLoading()
+    }
+  }
+
+  // 6. 处理已匹配的路由
   if (to.matched.length > 0) {
     setWorktab(to)
     setPageTitle(to)
@@ -195,7 +212,7 @@ async function handleRouteGuard(
     return
   }
 
-  // 6. 未匹配到路由，跳转到 404
+  // 7. 仍然未匹配，跳转到 404
   next({ name: 'Exception404' })
 }
 

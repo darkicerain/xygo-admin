@@ -2,8 +2,8 @@
   <div class="art-card p-5 flex-b mb-5 max-sm:mb-4">
     <div>
       <h2 class="text-2xl font-medium">关于项目</h2>
-      <p class="text-g-700 mt-1">{{ systemName }} 是一款兼具设计美学与高效开发的后台系统</p>
-      <p class="text-g-700 mt-1">使用了 Vue3、TypeScript、Vite、Element Plus 等前沿技术</p>
+      <p class="text-g-700 mt-1">{{ systemName }} 是基于 Vue3 + GoFrame 的开源中后台管理框架</p>
+      <p class="text-g-700 mt-1">内置权限管理、代码生成、系统监控等核心模块，开箱即用</p>
 
       <div class="flex flex-wrap gap-3.5 max-w-150 mt-9">
         <div
@@ -28,10 +28,10 @@
   const systemName = AppConfig.systemInfo.name
 
   const linkList = [
-    { label: '项目官网', url: WEB_LINKS.DOCS },
-    { label: '文档', url: WEB_LINKS.INTRODUCE },
-    { label: 'Github', url: WEB_LINKS.GITHUB_HOME },
-    { label: '哔哩哔哩', url: WEB_LINKS.BILIBILI }
+    { label: '项目官网', url: WEB_LINKS.HOME },
+    { label: '文档中心', url: WEB_LINKS.DOCS },
+    { label: 'GitHub', url: WEB_LINKS.GITHUB },
+    { label: 'Gitee', url: WEB_LINKS.GITEE }
   ]
 
   /**

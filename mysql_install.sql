@@ -349,7 +349,6 @@ INSERT INTO `xy_admin_menu` (`id`, `parent_id`, `type`, `title`, `name`, `path`,
 (103, 100, 2, '500', 'Exception500', '500', '/exception/500', '', '', 0, 0, '', '', '', 0, 0, 0, '', '', 0, 0, 113, 1, '异常-500', 0, 0, 1768549363, 1768549363),
 (110, 0, 1, '运维管理', 'Safeguard', '/safeguard', '/index/index', '', 'ri:shield-check-line', 0, 0, '', '', '', 0, 0, 0, '', '', 0, 0, 120, 1, '运维根', 0, 0, 1768549363, 1768549363),
 (111, 110, 2, '服务器监控', 'SafeguardServer', 'server', '/safeguard/server', '', 'ri:hard-drive-3-line', 0, 1, '', '', '[\"GET /admin/monitor/server\"]', 0, 0, 0, '', '', 0, 0, 121, 1, '运维-服务器', 0, 0, 1768549363, 1770644180),
-(121, 0, 2, '更新日志', 'ChangeLog', '/change/log', '/change/log', '', 'ri:gamepad-line', 0, 0, '', '', '', 0, 0, 1, 'v3.0.1', '1', 0, 0, 999, 1, '', 0, 0, 1768549363, 1768549363),
 (122, 60, 2, '附件管理', 'system/attachment', 'system/attachment', '/system/attachment/index', 'sys_attachment', 'ep:folder-opened', 0, 1, '', '', NULL, 0, 0, 0, '', '', 0, 0, 3, 1, '附件中心与文件管理', 0, 0, 1768549363, 1768549363),
 (123, 122, 3, '查看', 'system/attachment/index', '', '', '', '', 0, 0, '', '', 'system:attachment:list', 0, 0, 0, '', '', 0, 0, 1, 1, '', 0, 0, 1768549363, 1768549363),
 (124, 122, 3, '编辑', 'system/attachment/edit', '', '', '', '', 0, 0, '', '', 'system:attachment:edit', 0, 0, 0, '', '', 0, 0, 2, 1, '', 0, 0, 1768549363, 1768549363),
@@ -894,7 +893,7 @@ CREATE TABLE `xy_member` (
 --
 
 INSERT INTO `xy_member` (`id`, `username`, `password`, `mobile`, `email`, `nickname`, `avatar`, `gender`, `birthday`, `money`, `score`, `level`, `group_id`, `status`, `last_login_ip`, `last_login_at`, `login_count`, `created_at`, `updated_at`, `deleted_at`) VALUES
-(1, 'z312193608', '$2a$10$ZP7cMjrRWrNJhgT3c5aJH.NC4FrXRTDnPSSS9NdzeLPBocvUTb/0q', '', '751300685@qq.com', 'z312193608', '/attachment/upload/20260212/cc679f09-57e9-4c35-9054-65e4afde8cd3.png', 0, NULL, '0.00', 11, 1, 1, 1, '127.0.0.1', 1770909732, 11, 1770908432, 1770913381, 0);
+(1, 'user', '$2a$10$ZP7cMjrRWrNJhgT3c5aJH.NC4FrXRTDnPSSS9NdzeLPBocvUTb/0q', '', '751300685@qq.com', '751300685', '/attachment/upload/20260212/cc679f09-57e9-4c35-9054-65e4afde8cd3.png', 0, NULL, '0.00', 11, 1, 1, 1, '127.0.0.1', 1770909732, 11, 1770908432, 1770913381, 0);
 
 -- --------------------------------------------------------
 
@@ -962,28 +961,7 @@ CREATE TABLE `xy_member_login_log` (
   `created_at` bigint(20) UNSIGNED DEFAULT NULL COMMENT '创建时间'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='会员登录日志表';
 
---
--- 转存表中的数据 `xy_member_login_log`
---
 
-INSERT INTO `xy_member_login_log` (`id`, `member_id`, `username`, `ip`, `user_agent`, `status`, `message`, `created_at`) VALUES
-(1, 1, 'z312193608', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36 Edg/144.0.0.0', 1, '登录成功', 1770908749),
-(2, 1, 'z312193608', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36 Edg/144.0.0.0', 0, '密码错误', 1770908749),
-(3, 1, 'z312193608', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36 Edg/144.0.0.0', 1, '登录成功', 1770908749),
-(4, 0, 'z312193608', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36 Edg/144.0.0.0', 0, '验证码错误', 1770908749),
-(5, 1, 'z312193608', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36 Edg/144.0.0.0', 1, '登录成功', 1770908749),
-(6, 1, 'z312193608', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36 Edg/144.0.0.0', 1, '登录成功', 1770908749),
-(7, 1, 'z312193608', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36 Edg/144.0.0.0', 1, '登录成功', 1770908749),
-(10, 1, 'z312193608', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36', 1, '登录成功', 1770908749),
-(11, 1, 'z312193608', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36 Edg/144.0.0.0', 1, '登录成功', 1770908749),
-(12, 0, 'z312193608', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36 Edg/144.0.0.0', 0, '验证码错误', 1770908749),
-(13, 1, 'z312193608', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36 Edg/144.0.0.0', 1, '登录成功', 1770908749),
-(14, 1, 'z312193608', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36 Edg/144.0.0.0', 1, '登录成功', 1770908749),
-(15, 0, 'z312193608', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36 Edg/144.0.0.0', 0, '用户名或密码错误', 1770908749),
-(16, 0, 'z312193608', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36 Edg/144.0.0.0', 0, '用户名或密码错误', 1770908749),
-(17, 0, 'z312193608', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36 Edg/144.0.0.0', 0, '用户名或密码错误', 1770908749),
-(18, 1, 'z312193608', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36 Edg/144.0.0.0', 1, '登录成功', 0),
-(19, 1, 'z312193608', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36 Edg/144.0.0.0', 1, '登录成功', 1770909732);
 
 -- --------------------------------------------------------
 
@@ -1018,8 +996,6 @@ CREATE TABLE `xy_member_menu` (
 
 INSERT INTO `xy_member_menu` (`id`, `pid`, `title`, `name`, `path`, `component`, `icon`, `menu_type`, `url`, `no_login_valid`, `extend`, `remark`, `type`, `permission`, `sort`, `status`, `created_at`, `updated_at`) VALUES
 (1, 0, '文档', 'docs', '/docs', 'docs/index', 'ri:book-open-line', 'tab', '', 1, 'none', '', 'nav', '', 10, 1, NULL, NULL),
-(2, 0, '案例', 'cases', '/cases', 'cases/index', 'ri:slideshow-line', 'tab', '', 1, 'none', '', 'nav', '', 20, 1, NULL, NULL),
-(3, 0, '社区', 'community', '/community', 'community/index', 'ri:discuss-line', 'tab', '', 1, 'none', '', 'nav', '', 30, 1, NULL, NULL),
 (4, 0, '我的账户', 'account', '/user', '', 'ri:user-line', 'tab', '', 0, 'none', '', 'menu_dir', '', 100, 1, NULL, NULL),
 (5, 4, '账户概览', 'overview', '/user/overview', 'member/center', 'ri:home-4-line', 'tab', '', 0, 'none', '', 'menu', '', 101, 1, NULL, NULL),
 (6, 4, '每日签到', 'checkin', '/user/checkin', 'member/center', 'ri:calendar-check-line', 'tab', '', 0, 'none', '', 'menu', '', 102, 1, NULL, NULL),

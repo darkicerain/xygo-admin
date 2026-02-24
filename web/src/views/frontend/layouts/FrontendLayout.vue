@@ -167,30 +167,28 @@
               <span class="font-heading font-extrabold text-2xl text-clay-foreground tracking-tight">{{ siteNameFirst }}<span class="text-clay-accent">{{ siteNameLast }}</span></span>
             </div>
             <p class="text-clay-muted max-w-sm leading-relaxed">
-              {{ siteStore.getSiteSubtitle() || '为开发者打造的高颜值、高性能后台管理系统解决方案。让开发变得简单而有趣。' }}
+              {{ siteStore.getSiteSubtitle() || '基于 Vue3 + GoFrame 的开源中后台管理框架，开箱即用，快速启动你的业务开发。' }}
             </p>
           </div>
           <div>
             <h4 class="font-heading font-bold text-clay-foreground mb-6">产品</h4>
             <ul class="space-y-3">
-              <li><a href="#" class="text-clay-muted hover:text-clay-accent transition-colors">功能特性</a></li>
-              <li><a href="#" class="text-clay-muted hover:text-clay-accent transition-colors">模块市场</a></li>
-              <li><a href="#" class="text-clay-muted hover:text-clay-accent transition-colors">在线演示</a></li>
+              <li><RouterLink to="/docs" class="text-clay-muted hover:text-clay-accent transition-colors">文档中心</RouterLink></li>
+              <li><a href="https://www.xygoadmin.com" target="_blank" class="text-clay-muted hover:text-clay-accent transition-colors">在线演示</a></li>
             </ul>
           </div>
           <div>
             <h4 class="font-heading font-bold text-clay-foreground mb-6">资源</h4>
             <ul class="space-y-3">
-              <li><a href="#" class="text-clay-muted hover:text-clay-accent transition-colors">文档中心</a></li>
-              <li><a href="https://github.com" target="_blank" class="text-clay-muted hover:text-clay-accent transition-colors">GitHub</a></li>
-              <li><a href="#" class="text-clay-muted hover:text-clay-accent transition-colors">问答社区</a></li>
+              <li><a href="https://github.com/z312193608/xygo-admin" target="_blank" class="text-clay-muted hover:text-clay-accent transition-colors">GitHub</a></li>
+              <li><a href="https://gitee.com/a751300685a/xygo-admin" target="_blank" class="text-clay-muted hover:text-clay-accent transition-colors">Gitee</a></li>
             </ul>
           </div>
         </div>
         <div class="border-t border-gray-100 pt-8 flex flex-col md:flex-row justify-between items-center gap-6">
           <p class="text-sm text-clay-muted font-medium">&copy; {{ new Date().getFullYear() }} {{ siteName }}. All rights reserved.</p>
           <div class="flex gap-4">
-            <a href="https://github.com" target="_blank" class="w-12 h-12 rounded-full bg-white shadow-clay-btn hover:shadow-clay-btn-hover flex items-center justify-center text-clay-foreground transition-all hover:-translate-y-1">
+            <a href="https://github.com/z312193608/xygo-admin" target="_blank" class="w-12 h-12 rounded-full bg-white shadow-clay-btn hover:shadow-clay-btn-hover flex items-center justify-center text-clay-foreground transition-all hover:-translate-y-1">
               <ArtSvgIcon icon="ri:github-fill" class="text-[22px]" />
             </a>
           </div>
@@ -207,6 +205,7 @@ import { useSiteStore } from '@/store/modules/site'
 import { useSettingStore } from '@/store/modules/setting'
 import { useI18n } from 'vue-i18n'
 import { ElMessageBox } from 'element-plus'
+import { loadFrontendRoutes, resetFrontendRouteState } from '@/router/frontend/loader'
 
 defineOptions({ name: 'FrontendLayout' })
 
@@ -275,23 +274,17 @@ onMounted(async () => {
     }
     // 设置页面标题
     document.title = siteStore.getSiteName()
-    // 加载前台菜单
-    if (!memberMenuStore.isLoaded) {
-      await memberMenuStore.fetchMenus()
-    }
+    // 加载前台菜单并注册动态路由
+    await loadFrontendRoutes(router)
   } finally {
     pageLoading.value = false
   }
 })
 
-// 监听登录状态变化
-watch(() => memberStore.isLogin, async (newVal) => {
-  if (newVal) {
-    await memberMenuStore.fetchMenus()
-  } else {
-    // 登出后重新拉取公开菜单（no_login_valid=1 的菜单未登录也应显示）
-    await memberMenuStore.fetchMenus()
-  }
+// 监听登录状态变化：登录/登出后重新加载菜单和路由
+watch(() => memberStore.isLogin, async () => {
+  resetFrontendRouteState()
+  await loadFrontendRoutes(router)
 })
 
 // 滚动状态
