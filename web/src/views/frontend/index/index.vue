@@ -117,9 +117,9 @@
     <!-- CRUD Code Gen Section（对齐 homesite） -->
     <section class="py-20 px-6 relative">
       <div class="max-w-7xl mx-auto rounded-[60px] bg-white/30 backdrop-blur-xl shadow-clay-deep p-8 md:p-16 overflow-hidden relative">
-        <div class="grid lg:grid-cols-2 gap-12 items-center">
-          <div class="order-2 lg:order-1">
-            <div class="relative rounded-[32px] bg-[#1e1e1e] p-6 shadow-2xl transform rotate-1 transition-transform hover:rotate-0">
+        <div class="grid lg:grid-cols-2 gap-12 items-center overflow-hidden">
+          <div class="order-2 lg:order-1 min-w-0 overflow-hidden">
+            <div class="relative rounded-[32px] bg-[#1e1e1e] p-6 shadow-none lg:shadow-2xl overflow-hidden transform rotate-1 transition-transform hover:rotate-0">
               <div class="flex gap-2 mb-4">
                 <div class="w-3 h-3 rounded-full bg-red-500"></div>
                 <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
@@ -136,7 +136,7 @@
 })</pre>
             </div>
           </div>
-          <div class="order-1 lg:order-2">
+          <div class="order-1 lg:order-2 min-w-0">
             <div class="inline-block px-4 py-1 rounded-full bg-clay-accent/10 text-clay-accent font-bold mb-4">代码生成</div>
             <h2 class="font-heading font-extrabold text-4xl md:text-5xl text-clay-foreground mb-6">可视化 CRUD 代码生成</h2>
             <p class="text-lg text-clay-muted mb-8">在界面上配置数据表字段和表单类型，一键生成前后端完整的增删改查代码，包含控制器、模型、Vue 页面和 API 文件，无需手写重复代码。</p>

@@ -29,5 +29,8 @@ export const WEB_LINKS = {
   COMMUNITY: '',
 
   // 项目介绍
-  INTRODUCE: 'https://www.xygoadmin.com'
+  INTRODUCE: 'https://www.xygoadmin.com',
+
+  // B站主页
+  BILIBILI: 'https://www.xygoadmin.com'
 }
