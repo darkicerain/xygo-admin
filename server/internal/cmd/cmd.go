@@ -25,6 +25,7 @@ import (
 	"xygo/internal/controller/member"
 	"xygo/internal/controller/site"
 	"xygo/internal/controller/system"
+	"xygo/internal/controller/wm"
 	"xygo/internal/library/cache"
 	"xygo/internal/library/monitor"
 	"xygo/internal/library/queue"
@@ -109,6 +110,13 @@ var (
 				mg.Middleware(middleware.DemoGuard)
 				mg.Bind(
 					member.NewV1(),
+				)
+			})
+			// 微信小程序接口（复用 MemberAuth 体系，/wm/auth/login 已在白名单）
+			group.Group("/wm", func(wg *ghttp.RouterGroup) {
+				wg.Middleware(middleware.MemberAuth)
+				wg.Bind(
+					wm.NewV1(),
 				)
 			})
 			})

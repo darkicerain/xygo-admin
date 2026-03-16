@@ -80,7 +80,7 @@
 
   // 弹窗相关
   const dialogVisible = ref(false)
-  const dialogType = ref<'menu' | 'button'>('menu')
+  const dialogType = ref<'directory' | 'menu' | 'button'>('menu')
   const editData = ref<AppRouteRecord | any>(null)
   const lockMenuType = ref(false)
   const parentMenu = ref<any>(null) // 当前操作的父菜单
@@ -106,7 +106,7 @@
       key: 'route',
       type: 'input',
       props: { clearable: true }
-    }
+    }  
   ])
 
   onMounted(() => {
@@ -475,7 +475,7 @@
    * @param row 菜单行数据
    */
   const handleEditMenu = (row: any): void => {
-    dialogType.value = 'menu'
+    dialogType.value = row.type === 1 ? 'directory' : 'menu'
     
     // ✅ 后端返回的是parentId（驼峰），不是parent_id
     const parentIdValue = row.parentId || row.parent_id || 0
@@ -585,7 +585,7 @@
       const params: any = {
         id: formData.id || 0,
         parentId: formData.parentId || 0,  // null/undefined转为0（顶级）
-        type: formData.menuType === 'button' ? 3 : (formData.isMenu ? 2 : 1),
+        type: formData.menuType === 'button' ? 3 : (formData.menuType === 'directory' ? 1 : 2),
         title: formData.menuType === 'menu' ? formData.name : formData.authName,
         name: formData.menuType === 'menu' ? formData.label : formData.authLabel,
         path: formData.path || '',

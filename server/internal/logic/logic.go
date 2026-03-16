@@ -22,4 +22,5 @@ import (
 	_ "xygo/internal/logic/post"
 	_ "xygo/internal/logic/sysconfig"
 	_ "xygo/internal/logic/user"
+	_ "xygo/internal/logic/wm"
 )

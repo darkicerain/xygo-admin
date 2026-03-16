@@ -32,6 +32,7 @@ var memberWhitelist = []string{
 	"/member/auth/captcha",
 	"/member/auth/checkCaptcha",
 	"/member/user/menus", // 菜单接口：有 token 返回完整菜单，无 token 返回公开菜单
+	"/wm/auth/login",  // 微信小程序登录接口
 }
 
 // isMemberCenterOpen 检查会员中心是否开启（从 basics 分组读取 open_member_center）
