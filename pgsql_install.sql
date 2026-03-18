@@ -2277,10 +2277,6 @@ CREATE TABLE public.xy_member (
     login_count integer DEFAULT 0 NOT NULL,
     created_at bigint,
     updated_at bigint,
-    openid_mapp character varying(64) DEFAULT ''::character varying NOT NULL,
-    openid_oa character varying(64) DEFAULT ''::character varying NOT NULL,
-    session_key character varying(128) DEFAULT ''::character varying NOT NULL,
-    wx_avatar character varying(500) DEFAULT ''::character varying NOT NULL,
     deleted_at bigint DEFAULT 0 NOT NULL
 );
 
@@ -2429,36 +2425,49 @@ COMMENT ON COLUMN public.xy_member.updated_at IS '更新时间';
 -- Name: COLUMN xy_member.deleted_at; Type: COMMENT; Schema: xygonew; Owner: -
 --
 
-COMMENT ON COLUMN public.xy_member.openid_mapp IS '微信小程序openid';
-
-
---
--- Name: COLUMN xy_member.openid_oa; Type: COMMENT; Schema: xygonew; Owner: -
---
-
-COMMENT ON COLUMN public.xy_member.openid_oa IS '微信公众号openid';
-
-
---
--- Name: COLUMN xy_member.session_key; Type: COMMENT; Schema: xygonew; Owner: -
---
-
-COMMENT ON COLUMN public.xy_member.session_key IS '小程序session_key';
-
-
---
--- Name: COLUMN xy_member.wx_avatar; Type: COMMENT; Schema: xygonew; Owner: -
---
-
-COMMENT ON COLUMN public.xy_member.wx_avatar IS '微信头像';
-
-
---
--- Name: COLUMN xy_member.deleted_at; Type: COMMENT; Schema: xygonew; Owner: -
---
-
 COMMENT ON COLUMN public.xy_member.deleted_at IS 'deleted time';
 
+
+--
+-- Name: xy_member_oauth; Type: TABLE; Schema: xygonew; Owner: -
+--
+
+CREATE TABLE public.xy_member_oauth (
+    id bigint NOT NULL,
+    member_id bigint NOT NULL,
+    platform character varying(32) NOT NULL,
+    openid character varying(128) NOT NULL,
+    unionid character varying(128) DEFAULT ''::character varying NOT NULL,
+    session_key character varying(128) DEFAULT ''::character varying NOT NULL,
+    nickname character varying(100) DEFAULT ''::character varying NOT NULL,
+    avatar character varying(500) DEFAULT ''::character varying NOT NULL,
+    extra text DEFAULT '' NOT NULL,
+    created_at bigint,
+    updated_at bigint,
+    deleted_at bigint DEFAULT 0 NOT NULL
+);
+
+COMMENT ON TABLE public.xy_member_oauth IS 'OAuth table';
+COMMENT ON COLUMN public.xy_member_oauth.id IS 'PK';
+COMMENT ON COLUMN public.xy_member_oauth.member_id IS 'member FK';
+COMMENT ON COLUMN public.xy_member_oauth.platform IS 'platform: wechat_mapp/wechat_oa/qq/alipay';
+COMMENT ON COLUMN public.xy_member_oauth.openid IS 'openid';
+COMMENT ON COLUMN public.xy_member_oauth.unionid IS 'unionid';
+COMMENT ON COLUMN public.xy_member_oauth.session_key IS 'session_key';
+COMMENT ON COLUMN public.xy_member_oauth.nickname IS 'nickname';
+COMMENT ON COLUMN public.xy_member_oauth.avatar IS 'avatar url';
+COMMENT ON COLUMN public.xy_member_oauth.extra IS 'extra json';
+COMMENT ON COLUMN public.xy_member_oauth.created_at IS 'created time';
+COMMENT ON COLUMN public.xy_member_oauth.updated_at IS 'updated time';
+COMMENT ON COLUMN public.xy_member_oauth.deleted_at IS 'deleted time';
+
+CREATE SEQUENCE public.xy_member_oauth_id_seq
+    START WITH 1 INCREMENT BY 1 NO MINVALUE NO MAXVALUE CACHE 1;
+ALTER SEQUENCE public.xy_member_oauth_id_seq OWNED BY public.xy_member_oauth.id;
+ALTER TABLE ONLY public.xy_member_oauth ALTER COLUMN id SET DEFAULT nextval('public.xy_member_oauth_id_seq'::regclass);
+ALTER TABLE ONLY public.xy_member_oauth ADD CONSTRAINT xy_member_oauth_pkey PRIMARY KEY (id);
+CREATE UNIQUE INDEX idx_member_oauth_platform_openid ON public.xy_member_oauth (platform, openid);
+CREATE INDEX idx_member_oauth_member ON public.xy_member_oauth (member_id);
 
 --
 -- Name: xy_member_checkin; Type: TABLE; Schema: xygonew; Owner: -

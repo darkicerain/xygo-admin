@@ -885,10 +885,6 @@ CREATE TABLE `xy_member` (
   `login_count` int(11) UNSIGNED NOT NULL DEFAULT '0' COMMENT '登录次数',
   `created_at` bigint(20) UNSIGNED DEFAULT NULL COMMENT '创建时间',
   `updated_at` bigint(20) UNSIGNED DEFAULT NULL COMMENT '更新时间',
-  `openid_mapp` varchar(64) NOT NULL DEFAULT '' COMMENT '微信小程序openid',
-  `openid_oa` varchar(64) NOT NULL DEFAULT '' COMMENT '微信公众号openid',
-  `session_key` varchar(128) NOT NULL DEFAULT '' COMMENT '小程序session_key',
-  `wx_avatar` varchar(500) NOT NULL DEFAULT '' COMMENT '微信头像',
   `deleted_at` bigint(20) UNSIGNED NOT NULL DEFAULT '0' COMMENT 'deleted time'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='会员表';
 
@@ -898,6 +894,35 @@ CREATE TABLE `xy_member` (
 
 INSERT INTO `xy_member` (`id`, `username`, `password`, `mobile`, `email`, `nickname`, `avatar`, `gender`, `birthday`, `money`, `score`, `level`, `group_id`, `status`, `last_login_ip`, `last_login_at`, `login_count`, `created_at`, `updated_at`, `deleted_at`) VALUES
 (1, 'user', '$2a$10$ZP7cMjrRWrNJhgT3c5aJH.NC4FrXRTDnPSSS9NdzeLPBocvUTb/0q', '', '751300685@qq.com', '751300685', '/attachment/upload/20260212/cc679f09-57e9-4c35-9054-65e4afde8cd3.png', 0, NULL, '0.00', 11, 1, 1, 1, '127.0.0.1', 1770909732, 11, 1770908432, 1770913381, 0);
+
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `xy_member_oauth`
+--
+
+CREATE TABLE `xy_member_oauth` (
+  `id` bigint(20) UNSIGNED NOT NULL COMMENT '主键ID',
+  `member_id` bigint(20) UNSIGNED NOT NULL COMMENT '关联会员ID',
+  `platform` varchar(32) NOT NULL COMMENT '平台标识 wechat_mapp/wechat_oa/qq/alipay等',
+  `openid` varchar(128) NOT NULL COMMENT '平台openid',
+  `unionid` varchar(128) NOT NULL DEFAULT '' COMMENT 'unionid',
+  `session_key` varchar(128) NOT NULL DEFAULT '' COMMENT 'session_key',
+  `nickname` varchar(100) NOT NULL DEFAULT '' COMMENT '平台昵称',
+  `avatar` varchar(500) NOT NULL DEFAULT '' COMMENT '平台头像',
+  `extra` text COMMENT '扩展JSON',
+  `created_at` bigint(20) UNSIGNED DEFAULT NULL COMMENT '创建时间',
+  `updated_at` bigint(20) UNSIGNED DEFAULT NULL COMMENT '更新时间',
+  `deleted_at` bigint(20) UNSIGNED NOT NULL DEFAULT '0' COMMENT 'deleted time'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='会员第三方OAuth认证表';
+
+ALTER TABLE `xy_member_oauth`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `idx_member_oauth_platform_openid` (`platform`,`openid`),
+  ADD KEY `idx_member_oauth_member` (`member_id`);
+
+ALTER TABLE `xy_member_oauth`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID';
 
 -- --------------------------------------------------------
 

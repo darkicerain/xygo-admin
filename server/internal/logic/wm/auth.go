@@ -74,17 +74,21 @@ func (s *sWmAuth) WxLogin(ctx context.Context, in *wmin.WxLoginInput) (out *wmin
 		ua = r.Header.Get("User-Agent")
 	}
 
-	// ---- 3. 查询或自动注册会员 ----
-	var member *entity.Member
-	err = dao.Member.Ctx(ctx).Where("openid_mapp", openid).Scan(&member)
+	// ---- 3. 通过 member_oauth 表查询或自动注册会员 ----
+	var oauth *entity.MemberOauth
+	err = dao.MemberOauth.Ctx(ctx).
+		Where("platform", "wechat_mapp").
+		Where("openid", openid).
+		Scan(&oauth)
 	if err != nil {
 		return nil, err
 	}
 
 	isNew := false
+	var member *entity.Member
 
-	if member == nil {
-		// 自动注册
+	if oauth == nil {
+		// 自动注册：先创建会员，再创建 oauth 绑定记录
 		isNew = true
 		now := gtime.Now().Unix()
 		dummyPwd, _ := bcrypt.GenerateFromPassword([]byte("wx_"+openid), bcrypt.DefaultCost)
@@ -93,32 +97,46 @@ func (s *sWmAuth) WxLogin(ctx context.Context, in *wmin.WxLoginInput) (out *wmin
 			shortId = shortId[len(shortId)-16:]
 		}
 		result, insertErr := dao.Member.Ctx(ctx).Data(g.Map{
-			"username":     "wx_" + shortId,
-			"password":     string(dummyPwd),
-			"nickname":     "微信用户",
-			"mobile":       "wx_" + shortId,
-			"openid_mapp":  openid,
-			"session_key":  sessionKey,
-			"status":      1,
-			"group_id":    1,
-			"level":       1,
-			"score":       0,
-			"created_at":  now,
-			"updated_at":  now,
+			"username":   "wx_" + shortId,
+			"password":   string(dummyPwd),
+			"nickname":   "微信用户",
+			"mobile":     "wx_" + shortId,
+			"status":     1,
+			"group_id":   1,
+			"level":      1,
+			"score":      0,
+			"created_at": now,
+			"updated_at": now,
 		}).Insert()
 		if insertErr != nil {
 			return nil, gerror.NewCode(consts.CodeServerError, "创建用户失败")
 		}
-		id, _ := result.LastInsertId()
-		err = dao.Member.Ctx(ctx).Where("id", id).Scan(&member)
+		memberId, _ := result.LastInsertId()
+
+		_, _ = dao.MemberOauth.Ctx(ctx).Data(g.Map{
+			"member_id":   memberId,
+			"platform":    "wechat_mapp",
+			"openid":      openid,
+			"session_key": sessionKey,
+			"created_at":  now,
+			"updated_at":  now,
+		}).Insert()
+
+		err = dao.Member.Ctx(ctx).Where("id", memberId).Scan(&member)
 		if err != nil || member == nil {
 			return nil, gerror.NewCode(consts.CodeServerError, "用户创建后查询失败")
 		}
 	} else {
-		// 已存在用户：更新 session_key
-		_, _ = dao.Member.Ctx(ctx).Where("id", member.Id).Data(g.Map{
+		// 已存在：更新 session_key
+		_, _ = dao.MemberOauth.Ctx(ctx).Where("id", oauth.Id).Data(g.Map{
 			"session_key": sessionKey,
+			"updated_at":  gtime.Now().Unix(),
 		}).Update()
+
+		err = dao.Member.Ctx(ctx).Where("id", oauth.MemberId).Scan(&member)
+		if err != nil || member == nil {
+			return nil, gerror.NewCode(consts.CodeServerError, "查询会员信息失败")
+		}
 	}
 
 	// ---- 4. 生成 JWT Token（复用 Member 体系） ----
@@ -167,6 +185,7 @@ func (s *sWmAuth) WxLogin(ctx context.Context, in *wmin.WxLoginInput) (out *wmin
 		IsNew:     isNew,
 	}, nil
 }
+
 // code2Session 调用微信 jscode2session 接口
 func code2Session(appId, appSecret, code string) (openid, sessionKey string, err error) {
 	url := fmt.Sprintf(

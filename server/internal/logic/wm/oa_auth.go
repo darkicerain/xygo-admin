@@ -106,16 +106,20 @@ func (s *sWmAuth) OaCallback(ctx context.Context, in *wmin.OaCallbackInput) (out
 		ua = r.Header.Get("User-Agent")
 	}
 
-	// ---- 3. 查询或自动注册会员 ----
-	var member *entity.Member
-	err = dao.Member.Ctx(ctx).Where("openid_oa", openid).Scan(&member)
+	// ---- 3. 通过 member_oauth 表查询或自动注册会员 ----
+	var oauth *entity.MemberOauth
+	err = dao.MemberOauth.Ctx(ctx).
+		Where("platform", "wechat_oa").
+		Where("openid", openid).
+		Scan(&oauth)
 	if err != nil {
 		return nil, err
 	}
 
 	isNew := false
+	var member *entity.Member
 
-	if member == nil {
+	if oauth == nil {
 		isNew = true
 		now := gtime.Now().Unix()
 		dummyPwd, _ := bcrypt.GenerateFromPassword([]byte("oa_"+openid), bcrypt.DefaultCost)
@@ -132,8 +136,7 @@ func (s *sWmAuth) OaCallback(ctx context.Context, in *wmin.OaCallbackInput) (out
 			"password":   string(dummyPwd),
 			"nickname":   nickname,
 			"mobile":     "oa_" + shortId,
-			"openid_oa":  openid,
-			"wx_avatar":  wxAvatar,
+			"avatar":     wxAvatar,
 			"status":     1,
 			"group_id":   1,
 			"level":      1,
@@ -144,21 +147,44 @@ func (s *sWmAuth) OaCallback(ctx context.Context, in *wmin.OaCallbackInput) (out
 		if insertErr != nil {
 			return nil, gerror.NewCode(consts.CodeServerError, "创建用户失败")
 		}
-		id, _ := result.LastInsertId()
-		err = dao.Member.Ctx(ctx).Where("id", id).Scan(&member)
+		memberId, _ := result.LastInsertId()
+
+		_, _ = dao.MemberOauth.Ctx(ctx).Data(g.Map{
+			"member_id":  memberId,
+			"platform":   "wechat_oa",
+			"openid":     openid,
+			"nickname":   wxNickname,
+			"avatar":     wxAvatar,
+			"created_at": now,
+			"updated_at": now,
+		}).Insert()
+
+		err = dao.Member.Ctx(ctx).Where("id", memberId).Scan(&member)
 		if err != nil || member == nil {
 			return nil, gerror.NewCode(consts.CodeServerError, "用户创建后查询失败")
 		}
 	} else {
-		updateData := g.Map{}
-		if wxNickname != "" && member.Nickname == "微信用户" {
-			updateData["nickname"] = wxNickname
+		err = dao.Member.Ctx(ctx).Where("id", oauth.MemberId).Scan(&member)
+		if err != nil || member == nil {
+			return nil, gerror.NewCode(consts.CodeServerError, "查询会员信息失败")
+		}
+
+		// 更新 oauth 表的昵称头像
+		oaUpdate := g.Map{"updated_at": gtime.Now().Unix()}
+		memberUpdate := g.Map{}
+		if wxNickname != "" {
+			oaUpdate["nickname"] = wxNickname
+			if member.Nickname == "微信用户" {
+				memberUpdate["nickname"] = wxNickname
+			}
 		}
 		if wxAvatar != "" {
-			updateData["wx_avatar"] = wxAvatar
+			oaUpdate["avatar"] = wxAvatar
+			memberUpdate["avatar"] = wxAvatar
 		}
-		if len(updateData) > 0 {
-			_, _ = dao.Member.Ctx(ctx).Where("id", member.Id).Data(updateData).Update()
+		_, _ = dao.MemberOauth.Ctx(ctx).Where("id", oauth.Id).Data(oaUpdate).Update()
+		if len(memberUpdate) > 0 {
+			_, _ = dao.Member.Ctx(ctx).Where("id", member.Id).Data(memberUpdate).Update()
 		}
 	}
 
