@@ -1,16 +1,8 @@
-// +----------------------------------------------------------------------
-// | XYGo Admin [ Vue3 + GoFrame 企业级中后台管理系统 ]
-// +----------------------------------------------------------------------
-// | Copyright (c) 2026 大连星韵网络科技有限公司 All rights reserved.
-// +----------------------------------------------------------------------
-// | Licensed ( https://opensource.org/licenses/MIT )
-// +----------------------------------------------------------------------
-// | Author: 喜羊羊 <751300685@qq.com>
-// +----------------------------------------------------------------------
-
 package middleware
 
 import (
+	"errors"
+
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/net/ghttp"
 
@@ -111,6 +103,10 @@ func MemberAuth(r *ghttp.Request) {
 	// 5. 解析 Token（使用 member 应用名）
 	memberUser, err := token.ParseMember(r.Context(), tokenStr)
 	if err != nil {
+		if errors.Is(err, token.ErrTokenKicked) {
+			r.SetError(gerror.NewCode(consts.CodeKickedOut, "您的账号已在其他设备登录，请重新登录"))
+			return
+		}
 		r.SetError(gerror.NewCode(consts.CodeNotAuthorized, "登录已过期，请重新登录"))
 		return
 	}

@@ -162,3 +162,18 @@ Thanks to these open-source projects:
 ### Support
 
 If you find this project helpful, please give us a Star on [GitHub](https://github.com/z312193608/xygo-admin) or [Gitee](https://gitee.com/a751300685a/xygo-admin). It means a lot to us.
+
+### Sponsor
+
+If XYGo Admin has been helpful to you, feel free to buy the author a coffee ☕. Your support keeps the project going!
+
+<table>
+  <tr>
+    <td align="center"><b>Alipay</b></td>
+    <td align="center"><b>WeChat Pay</b></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="http://xygoupload.xingyunwangluo.com/gitee/alipay.jpg" width="200" /></td>
+    <td align="center"><img src="http://xygoupload.xingyunwangluo.com/gitee/wechatpay.jpg" width="200" /></td>
+  </tr>
+</table>

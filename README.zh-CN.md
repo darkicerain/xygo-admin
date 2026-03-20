@@ -162,3 +162,18 @@ xygoadmin/
 ### 支持项目
 
 如果觉得项目不错，请到 [GitHub](https://github.com/z312193608/xygo-admin) 或 [Gitee](https://gitee.com/a751300685a/xygo-admin) 点个 Star，这是对我们最大的鼓励。
+
+### 赞助支持
+
+如果 XYGo Admin 对你有帮助，欢迎请作者喝杯咖啡 ☕，你的支持是项目持续迭代的最大动力！
+
+<table>
+  <tr>
+    <td align="center"><b>支付宝</b></td>
+    <td align="center"><b>微信支付</b></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="http://xygoupload.xingyunwangluo.com/gitee/alipay.jpg" width="200" /></td>
+    <td align="center"><img src="http://xygoupload.xingyunwangluo.com/gitee/wechatpay.jpg" width="200" /></td>
+  </tr>
+</table>
