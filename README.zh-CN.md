@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="http://xygoupload.xingyunwangluo.com/gitee/%E5%8D%95%E7%8B%AClogo.png" width="200" />
+  <img src="https://xygoupload.xingyunwangluo.com/gitee/%E5%8D%95%E7%8B%AClogo.png" width="200" />
 </p>
 <br />
 <h1 align="center">XYGo Admin</h1>
@@ -77,19 +77,19 @@ XYGo Admin 是一款全栈开源中后台管理框架，前端基于 [Art Design
 
 <table>
   <tr>
-    <td><img src="http://xygoupload.xingyunwangluo.com/gitee/1.png" /></td>
-    <td><img src="http://xygoupload.xingyunwangluo.com/gitee/2.png" /></td>
-    <td><img src="http://xygoupload.xingyunwangluo.com/gitee/3.png" /></td>
+    <td><img src="https://xygoupload.xingyunwangluo.com/gitee/1.png" /></td>
+    <td><img src="https://xygoupload.xingyunwangluo.com/gitee/2.png" /></td>
+    <td><img src="https://xygoupload.xingyunwangluo.com/gitee/3.png" /></td>
   </tr>
   <tr>
-    <td><img src="http://xygoupload.xingyunwangluo.com/gitee/4.png" /></td>
-    <td><img src="http://xygoupload.xingyunwangluo.com/gitee/5.png" /></td>
-    <td><img src="http://xygoupload.xingyunwangluo.com/gitee/6.png" /></td>
+    <td><img src="https://xygoupload.xingyunwangluo.com/gitee/4.png" /></td>
+    <td><img src="https://xygoupload.xingyunwangluo.com/gitee/5.png" /></td>
+    <td><img src="https://xygoupload.xingyunwangluo.com/gitee/6.png" /></td>
   </tr>
   <tr>
-    <td><img src="http://xygoupload.xingyunwangluo.com/gitee/7.png" /></td>
-    <td><img src="http://xygoupload.xingyunwangluo.com/gitee/8.png" /></td>
-    <td><img src="http://xygoupload.xingyunwangluo.com/gitee/9.png" /></td>
+    <td><img src="https://xygoupload.xingyunwangluo.com/gitee/7.png" /></td>
+    <td><img src="https://xygoupload.xingyunwangluo.com/gitee/8.png" /></td>
+    <td><img src="https://xygoupload.xingyunwangluo.com/gitee/9.png" /></td>
   </tr>
 </table>
 
@@ -114,14 +114,19 @@ xygoadmin/
 ├── server/                    # 后端 GoFrame 项目
 │   ├── api/                   # API 接口定义
 │   ├── internal/
+│   │   ├── cmd/               # 主命令入口
+│   │   ├── cmdtools/          # 工具命令逻辑（迁移、模板检查）
 │   │   ├── controller/        # 控制器（请求处理）
 │   │   ├── logic/             # 业务逻辑（核心代码在这里）
 │   │   ├── model/             # 数据模型（entity/do/input）
 │   │   ├── dao/               # 数据访问层（gf gen dao 自动生成）
 │   │   └── service/           # 服务接口（gf gen service 自动生成）
+│   ├── cmd_tools/migrate/     # 迁移 SQL 文件 + 编写指南
 │   ├── manifest/config/       # 运行时配置文件
 │   ├── hack/config.yaml       # CLI 工具配置（build/gen）
-│   └── resource/              # 静态资源、代码生成模板、SQL
+│   ├── resource/              # 静态资源、代码生成模板、SQL
+│   ├── main.go                # 服务启动入口（gf run main.go）
+│   └── tools.go               # 工具命令入口（gf run tools.go）
 ├── web/                       # 前端 Vue3 项目
 │   ├── src/
 │   │   ├── api/               # API 请求封装
@@ -173,7 +178,7 @@ xygoadmin/
     <td align="center"><b>微信支付</b></td>
   </tr>
   <tr>
-    <td align="center"><img src="http://xygoupload.xingyunwangluo.com/gitee/alipay.jpg" width="200" /></td>
-    <td align="center"><img src="http://xygoupload.xingyunwangluo.com/gitee/wechatpay.jpg" width="200" /></td>
+    <td align="center"><img src="https://xygoupload.xingyunwangluo.com/gitee/alipay.jpg" width="200" /></td>
+    <td align="center"><img src="https://xygoupload.xingyunwangluo.com/gitee/wechatpay.jpg" width="200" /></td>
   </tr>
 </table>

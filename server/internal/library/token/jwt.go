@@ -28,6 +28,7 @@ import (
 // 应用名常量
 const (
 	AppAdmin  = "admin"  // 后台管理员
+	AppTenant = "tenant" // 租户管理员（扩展预留）
 	AppMember = "member" // 前台会员
 )
 

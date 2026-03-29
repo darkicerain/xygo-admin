@@ -26,6 +26,9 @@ type AuthUser struct {
 	RoleId  uint64 `json:"roleId"  description:"角色ID"`
 	RoleKey string `json:"roleKey" description:"角色标识（用于超管判断：super_admin）"`
 
+	// 租户信息（扩展预留）
+	TenantId uint64 `json:"tenantId" description:"租户ID（0=平台，>0=租户）"`
+
 	// 登录信息
 	LoginAt int64 `json:"loginAt" description:"登录时间"`
 }

@@ -22,9 +22,11 @@ import (
 
 // Context 自定义上下文结构（存储请求相关的用户信息）
 type Context struct {
-	User   *model.AuthUser   // 当前登录管理员（后台）
-	Member *model.MemberUser // 当前登录会员（前台）
-	Module string            // 应用模块（admin/member/home等）
+	User       *model.AuthUser       // 当前登录管理员（后台）
+	Member     *model.MemberUser     // 当前登录会员（前台）
+	TenantUser *model.TenantAuthUser // 当前登录租户管理员（扩展预留）
+	Module     string                // 应用模块（admin/member/tenant/home等）
+	TenantId   uint64                // 当前租户ID（0=平台，>0=租户；扩展预留）
 }
 
 // Init 初始化上下文对象到请求中
@@ -156,4 +158,53 @@ func GetMemberGroupId(ctx context.Context) uint64 {
 		return 0
 	}
 	return member.GroupId
+}
+
+// ==================== 租户相关方法（扩展预留） ====================
+
+// SetTenantId 设置当前租户ID
+func SetTenantId(ctx context.Context, tenantId uint64) {
+	c := Get(ctx)
+	if c == nil {
+		g.Log().Warning(ctx, "contexts.SetTenantId: context is nil")
+		return
+	}
+	c.TenantId = tenantId
+}
+
+// GetTenantId 获取当前租户ID
+func GetTenantId(ctx context.Context) uint64 {
+	c := Get(ctx)
+	if c == nil {
+		return 0
+	}
+	return c.TenantId
+}
+
+// SetTenantUser 将租户管理员信息设置到上下文中
+func SetTenantUser(ctx context.Context, tu *model.TenantAuthUser) {
+	c := Get(ctx)
+	if c == nil {
+		g.Log().Warning(ctx, "contexts.SetTenantUser: context is nil")
+		return
+	}
+	c.TenantUser = tu
+}
+
+// GetTenantUser 获取租户管理员信息
+func GetTenantUser(ctx context.Context) *model.TenantAuthUser {
+	c := Get(ctx)
+	if c == nil {
+		return nil
+	}
+	return c.TenantUser
+}
+
+// GetTenantUserId 获取租户管理员ID
+func GetTenantUserId(ctx context.Context) uint64 {
+	tu := GetTenantUser(ctx)
+	if tu == nil {
+		return 0
+	}
+	return tu.Id
 }

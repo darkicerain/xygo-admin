@@ -1,12 +1,3 @@
-<!-- +----------------------------------------------------------------------
-  | XYGo Admin [ Vue3 + GoFrame 企业级中后台管理系统 ]
-  +----------------------------------------------------------------------
-  | Copyright (c) 2026 大连星韵网络科技有限公司 All rights reserved.
-  +----------------------------------------------------------------------
-  | Licensed ( https://opensource.org/licenses/MIT )
-  +----------------------------------------------------------------------
-  | Author: 喜羊羊 <751300685@qq.com>
-  +---------------------------------------------------------------------- -->
 <!-- 登录页面 -->
 <template>
   <div class="flex w-full h-screen">
@@ -32,6 +23,8 @@
                 class="custom-height"
                 :placeholder="$t('login.placeholder.username')"
                 v-model.trim="formData.username"
+                @focus="onInputFocus"
+                @blur="onInputBlur"
               />
             </ElFormItem>
             <ElFormItem prop="password">
@@ -39,10 +32,25 @@
                 class="custom-height"
                 :placeholder="$t('login.placeholder.password')"
                 v-model.trim="formData.password"
-                type="password"
+                :type="passwordVisible ? 'text' : 'password'"
                 autocomplete="off"
-                show-password
-              />
+                @focus="onInputFocus"
+                @blur="onInputBlur"
+              >
+                <template #suffix>
+                  <ElIcon
+                    class="cursor-pointer"
+                    @click="passwordVisible = !passwordVisible"
+                  >
+                    <svg v-if="passwordVisible" viewBox="0 0 1024 1024" width="1em" height="1em" fill="currentColor">
+                      <path d="M512 256c-211.2 0-390.4 121.6-480 307.2 89.6 185.6 268.8 307.2 480 307.2s390.4-121.6 480-307.2C902.4 377.6 723.2 256 512 256zm0 512c-112 0-204.8-92.8-204.8-204.8S400 358.4 512 358.4s204.8 92.8 204.8 204.8S624 768 512 768zm0-332.8c-70.4 0-128 57.6-128 128s57.6 128 128 128 128-57.6 128-128-57.6-128-128-128z" />
+                    </svg>
+                    <svg v-else viewBox="0 0 1024 1024" width="1em" height="1em" fill="currentColor">
+                      <path d="M942.4 521.6c-25.6-44.8-57.6-86.4-92.8-121.6l-64 64c28.8 28.8 54.4 60.8 76.8 99.2-89.6 160-249.6 256-400 256-51.2 0-99.2-9.6-144-28.8l-70.4 70.4c64 32 134.4 51.2 214.4 51.2 211.2 0 390.4-121.6 480-307.2-9.6-28.8-25.6-57.6-44.8-83.2zM876.8 128l-48-48-188.8 188.8c-38.4-16-80-25.6-128-25.6-211.2 0-390.4 121.6-480 307.2 51.2 102.4 128 188.8 220.8 243.2L76.8 972.8l48 48 752-752zM320 563.2c0-105.6 86.4-192 192-192 38.4 0 73.6 12.8 105.6 32L352 668.8c-19.2-28.8-32-67.2-32-105.6z" />
+                    </svg>
+                  </ElIcon>
+                </template>
+              </ElInput>
             </ElFormItem>
 
             <!-- 点选验证码 -->
@@ -107,10 +115,28 @@
   const siteStore = useSiteStore()
   const systemName = computed(() => siteStore.getSiteName())
 
+  const isInputFocused = ref(false)
+  const passwordVisible = ref(false)
+
+  let blurTimer: ReturnType<typeof setTimeout> | null = null
+  const onInputFocus = () => {
+    if (blurTimer) { clearTimeout(blurTimer); blurTimer = null }
+    isInputFocused.value = true
+  }
+  const onInputBlur = () => {
+    blurTimer = setTimeout(() => { isInputFocused.value = false }, 100)
+  }
+
   const formData = reactive({
-    username: 'admin',
-    password: '123456',
+    username: '',
+    password: '',
     rememberPassword: true
+  })
+
+  provide('loginAnimation', {
+    isTyping: isInputFocused,
+    hasSecret: computed(() => formData.password.length > 0),
+    secretVisible: passwordVisible,
   })
 
   const rules = computed<FormRules>(() => ({

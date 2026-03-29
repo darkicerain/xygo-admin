@@ -1,12 +1,3 @@
-<!-- +----------------------------------------------------------------------
-  | XYGo Admin [ Vue3 + GoFrame 企业级中后台管理系统 ]
-  +----------------------------------------------------------------------
-  | Copyright (c) 2026 大连星韵网络科技有限公司 All rights reserved.
-  +----------------------------------------------------------------------
-  | Licensed ( https://opensource.org/licenses/MIT )
-  +----------------------------------------------------------------------
-  | Author: 喜羊羊 <751300685@qq.com>
-  +---------------------------------------------------------------------- -->
 <!-- 登录、注册、忘记密码左侧背景 -->
 <template>
   <div class="login-left-view">
@@ -16,7 +7,11 @@
     </div>
 
     <div class="left-img">
-      <ThemeSvg :src="loginIcon" size="100%" />
+      <AnimatedCharacters
+        :is-typing="animState.isTyping.value"
+        :has-secret="animState.hasSecret.value"
+        :secret-visible="animState.secretVisible.value"
+      />
     </div>
 
     <div class="text-wrap">
@@ -81,14 +76,19 @@
 
 <script setup lang="ts">
   import AppConfig from '@/config'
-  import loginIcon from '@imgs/svg/login_icon.svg'
   import { themeAnimation } from '@/utils/ui/animation'
   import { useSiteStore } from '@/store/modules/site'
+  import AnimatedCharacters from './animated-characters/index.vue'
 
-  // 定义 props
   defineProps<{
-    hideContent?: boolean // 是否隐藏内容，只显示 logo
+    hideContent?: boolean
   }>()
+
+  const animState = inject('loginAnimation', {
+    isTyping: ref(false),
+    hasSecret: computed(() => false),
+    secretVisible: ref(false),
+  })
 
   const siteStore = useSiteStore()
   const systemName = computed(() => siteStore.getSiteName() || AppConfig.systemInfo.name)
@@ -131,9 +131,11 @@
 
     .left-img {
       position: absolute;
-      inset: 0 0 10.5%;
+      inset: 0 0 22%;
       z-index: 10;
-      width: 40%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       margin: auto;
       animation: slideInLeft 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
     }

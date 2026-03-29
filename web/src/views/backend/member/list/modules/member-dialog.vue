@@ -1,12 +1,3 @@
-<!-- +----------------------------------------------------------------------
-  | XYGo Admin [ Vue3 + GoFrame 企业级中后台管理系统 ]
-  +----------------------------------------------------------------------
-  | Copyright (c) 2026 大连星韵网络科技有限公司 All rights reserved.
-  +----------------------------------------------------------------------
-  | Licensed ( https://opensource.org/licenses/MIT )
-  +----------------------------------------------------------------------
-  | Author: 喜羊羊 <751300685@qq.com>
-  +---------------------------------------------------------------------- -->
 <template>
   <ElDialog
     v-model="dialogVisible"
@@ -15,6 +6,18 @@
     align-center
   >
     <ElForm ref="formRef" :model="formData" :rules="rules" label-width="80px">
+      <ElFormItem label="头像">
+        <div class="flex-c gap-3">
+          <ElAvatar :size="64" :src="formData.avatar || undefined">
+            <span class="text-lg">{{ formData.username?.charAt(0) || '?' }}</span>
+          </ElAvatar>
+          <div>
+            <ElButton size="small" @click="triggerAvatarUpload">上传头像</ElButton>
+            <ElButton v-if="formData.avatar" size="small" type="danger" link @click="formData.avatar = ''">移除</ElButton>
+            <input ref="avatarInput" type="file" accept="image/*" class="hidden" @change="handleAvatarUpload" />
+          </div>
+        </div>
+      </ElFormItem>
       <ElFormItem label="用户名" prop="username">
         <ElInput v-model="formData.username" placeholder="请输入用户名" />
       </ElFormItem>
@@ -27,8 +30,8 @@
       <ElFormItem label="邮箱" prop="email">
         <ElInput v-model="formData.email" placeholder="请输入邮箱" />
       </ElFormItem>
-      <ElFormItem label="密码" prop="password" v-if="dialogType === 'add'">
-        <ElInput v-model="formData.password" type="password" placeholder="请输入密码" show-password />
+      <ElFormItem :label="dialogType === 'add' ? '密码' : '新密码'" prop="password">
+        <ElInput v-model="formData.password" type="password" :placeholder="dialogType === 'add' ? '请输入密码' : '留空则不修改'" show-password />
       </ElFormItem>
       <ElFormItem label="性别" prop="gender">
         <ElSelect v-model="formData.gender">
@@ -64,6 +67,7 @@
 <script setup lang="ts">
   import type { FormInstance, FormRules } from 'element-plus'
   import { getMemberGroupOptions, addMember, editMember, type MemberItem, type MemberGroupOption } from '@/api/backend/member'
+  import { uploadImageApi } from '@/api/backend/common/upload'
 
   interface Props {
     visible: boolean
@@ -92,6 +96,27 @@
 
   // 表单实例
   const formRef = ref<FormInstance>()
+  const avatarInput = ref<HTMLInputElement | null>(null)
+
+  const triggerAvatarUpload = () => {
+    avatarInput.value?.click()
+  }
+
+  const handleAvatarUpload = async (e: Event) => {
+    const target = e.target as HTMLInputElement
+    const file = target.files?.[0]
+    if (!file) return
+    target.value = ''
+    try {
+      const res = await uploadImageApi(file) as any
+      if (res?.url) {
+        formData.avatar = res.url
+        ElMessage.success('头像上传成功')
+      }
+    } catch {
+      ElMessage.error('头像上传失败')
+    }
+  }
 
   // 表单数据
   const formData = reactive({
@@ -100,6 +125,7 @@
     nickname: '',
     mobile: '',
     email: '',
+    avatar: '',
     gender: 0,
     password: '',
     groupId: undefined as number | undefined,
@@ -108,8 +134,8 @@
     status: 1
   })
 
-  // 表单验证规则
-  const rules: FormRules = {
+  // 表单验证规则（编辑时密码非必填）
+  const rules = computed<FormRules>(() => ({
     username: [
       { required: true, message: '请输入用户名', trigger: 'blur' },
       { min: 2, max: 20, message: '长度在 2 到 20 个字符', trigger: 'blur' }
@@ -123,11 +149,15 @@
     email: [
       { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
     ],
-    password: [
-      { required: true, message: '请输入密码', trigger: 'blur' },
-      { min: 6, message: '密码至少6位', trigger: 'blur' }
-    ]
-  }
+    password: dialogType.value === 'add'
+      ? [
+          { required: true, message: '请输入密码', trigger: 'blur' },
+          { min: 6, message: '密码至少6位', trigger: 'blur' }
+        ]
+      : [
+          { min: 6, message: '密码至少6位', trigger: 'blur' }
+        ]
+  }))
 
   // 加载会员分组选项
   const loadGroupOptions = async () => {
@@ -156,6 +186,7 @@
       formData.nickname = row.nickname || ''
       formData.mobile = row.mobile || ''
       formData.email = row.email || ''
+      formData.avatar = row.avatar || ''
       formData.gender = row.gender || 0
       formData.groupId = row.groupId
       formData.score = row.score || 0
@@ -168,6 +199,7 @@
       formData.nickname = ''
       formData.mobile = ''
       formData.email = ''
+      formData.avatar = ''
       formData.gender = 0
       formData.password = ''
       formData.groupId = undefined
@@ -202,12 +234,14 @@
     await formRef.value.validate(async (valid) => {
       if (valid) {
         try {
-          if (formData.id) {
-            // 编辑
-            await editMember(formData)
+          const submitData = { ...formData }
+          if (submitData.id && !submitData.password) {
+            delete (submitData as any).password
+          }
+          if (submitData.id) {
+            await editMember(submitData)
           } else {
-            // 新增
-            await addMember(formData)
+            await addMember(submitData)
           }
           ElMessage.success(formData.id ? '编辑成功' : '添加成功')
           dialogVisible.value = false
