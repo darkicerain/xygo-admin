@@ -10,6 +10,9 @@
 
 package consts
 
+// 系统版本号
+const Version = "1.2.7"
+
 // 通用业务错误消息（可在中间件/服务层统一使用）
 const (
 	// ErrorORM 数据库执行异常（对外提示用友好文案）
