@@ -28,6 +28,7 @@ import (
 	"xygo/internal/cmdtools/addon"
 	"xygo/internal/cmdtools/checktpl"
 	"xygo/internal/cmdtools/migrate"
+	"xygo/internal/cmdtools/updater"
 )
 
 func main() {
@@ -66,12 +67,13 @@ func main() {
 		fmt.Println("  ║  [4] check-tpl         检查模板语法                        ║")
 		fmt.Println("  ║  [5] addon install     安装扩展                            ║")
 		fmt.Println("  ║  [6] addon uninstall   卸载扩展                            ║")
+		fmt.Println("  ║  [7] update            在线更新                            ║")
 		fmt.Println("  ║  [0] exit              退出                                ║")
 		fmt.Println("  ║                                                            ║")
 		fmt.Println("  ╚════════════════════════════════════════════════════════════╝")
 		fmt.Println()
 
-		choice := gcmd.Scan("  请选择命令 [0-6]: ")
+		choice := gcmd.Scan("  请选择命令 [0-7]: ")
 		choice = strings.TrimSpace(choice)
 
 		switch choice {
@@ -87,6 +89,8 @@ func main() {
 			_ = addon.Install(ctx, "")
 		case "6":
 			_ = addon.Uninstall(ctx, "")
+		case "7":
+			_ = updater.RunUpdate(ctx)
 		case "0", "exit", "quit", "q":
 			fmt.Println("  Bye!")
 			fmt.Println("  提示：按 Ctrl+C 或关闭终端退出 gf run 监控进程")
@@ -132,8 +136,10 @@ func runCommand(cmd, sub string) {
 			fmt.Printf("  未知的 addon 子命令: %s\n", sub)
 			fmt.Println("  可用: install / uninstall")
 		}
+	case "update":
+		_ = updater.RunUpdate(ctx)
 	default:
 		fmt.Printf("  未知命令: %s\n", cmd)
-		fmt.Println("  可用: migrate / check-tpl / addon")
+		fmt.Println("  可用: migrate / check-tpl / addon / update")
 	}
 }
