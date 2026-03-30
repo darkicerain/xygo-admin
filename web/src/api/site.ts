@@ -26,6 +26,7 @@ export interface SiteInfo {
   logo: string
   closed: string
   openMemberCenter: boolean
+  demoMode: boolean
 }
 
 /**

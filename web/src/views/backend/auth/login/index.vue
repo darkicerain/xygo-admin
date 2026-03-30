@@ -128,8 +128,8 @@
   }
 
   const formData = reactive({
-    username: '',
-    password: '',
+    username: siteStore.isDemoMode() ? 'admin' : '',
+    password: siteStore.isDemoMode() ? '123456' : '',
     rememberPassword: true
   })
 

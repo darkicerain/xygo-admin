@@ -30,4 +30,5 @@ type IndexRes struct {
 	Logo             string            `json:"logo"`             // Logo 地址
 	Closed           string            `json:"closed"`           // 关闭状态
 	OpenMemberCenter bool              `json:"openMemberCenter"` // 是否开启会员中心
+	DemoMode         bool              `json:"demoMode"`         // 是否演示模式
 }

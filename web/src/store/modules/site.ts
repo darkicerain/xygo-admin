@@ -104,6 +104,13 @@ export const useSiteStore = defineStore(
     }
 
     /**
+     * 是否为演示模式
+     */
+    const isDemoMode = (): boolean => {
+      return !!(siteInfo.value as any).demoMode
+    }
+
+    /**
      * 是否启用门户首页
      */
     const isPortalEnabled = (): boolean => {
@@ -151,6 +158,7 @@ export const useSiteStore = defineStore(
       getTimezone,
       getTimeZoneMode,
       setTimeZoneMode,
+      isDemoMode,
       isUserCenterEnabled,
       isPortalEnabled,
       setFrontendConfig

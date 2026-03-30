@@ -55,6 +55,8 @@ func (c *ControllerV1) Index(ctx context.Context, req *api.IndexReq) (res *api.I
 		openMemberCenter = false
 	}
 
+	demoMode := g.Cfg().MustGet(ctx, "system.demoMode").Bool()
+
 	res = &api.IndexRes{
 		Group:            group,
 		Items:            items,
@@ -67,6 +69,7 @@ func (c *ControllerV1) Index(ctx context.Context, req *api.IndexReq) (res *api.I
 		Logo:             items["site_logo"],
 		Closed:           items["site_closed"],
 		OpenMemberCenter: openMemberCenter,
+		DemoMode:         demoMode,
 	}
 	return
 }
