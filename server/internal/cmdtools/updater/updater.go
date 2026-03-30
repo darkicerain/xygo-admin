@@ -234,11 +234,12 @@ func applyUpdate(ctx context.Context, projectRoot string, local *VersionInfo, en
 			}
 			relPath, _ := filepath.Rel(filesDir, path)
 			localPath := filepath.Join(projectRoot, relPath)
+			checksumKey := filepath.ToSlash(relPath)
 
 			if !gfile.Exists(localPath) {
 				newFiles = append(newFiles, relPath)
 			} else {
-				origHash, hasChecksum := checksums[relPath]
+				origHash, hasChecksum := checksums[checksumKey]
 				localHash := fileHash(localPath)
 
 				if hasChecksum && localHash != origHash {
