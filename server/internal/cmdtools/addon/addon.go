@@ -23,12 +23,12 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
 	"github.com/gogf/gf/v2/database/gdb"
 	"github.com/gogf/gf/v2/frame/g"
-	"github.com/gogf/gf/v2/os/gcfg"
 	"github.com/gogf/gf/v2/os/gcmd"
 	"github.com/gogf/gf/v2/os/gfile"
 
@@ -36,6 +36,8 @@ import (
 )
 
 const addonTable = "xy_addon"
+
+var parsedLink string
 
 type AddonMeta struct {
 	Name           string `yaml:"name"`
@@ -161,10 +163,12 @@ func Install(ctx context.Context, name string) error {
 		filesDir = filepath.Join(tmpDir, "files")
 	}
 	var copiedFiles []string
+	var createdDirs []string
 	if gfile.Exists(filesDir) {
 		projectRoot := getProjectRoot()
 		backupDir := filepath.Join("addons", ".backup", name)
 		os.MkdirAll(backupDir, 0755)
+		createdDirSet := make(map[string]bool)
 
 		err := filepath.Walk(filesDir, func(path string, info os.FileInfo, err error) error {
 			if err != nil || info.IsDir() {
@@ -173,7 +177,10 @@ func Install(ctx context.Context, name string) error {
 			relPath, _ := filepath.Rel(filesDir, path)
 			destPath := filepath.Join(projectRoot, relPath)
 
-			// 备份已存在的文件
+			for _, d := range collectNewDirs(projectRoot, relPath) {
+				createdDirSet[d] = true
+			}
+
 			if gfile.Exists(destPath) {
 				backupPath := filepath.Join(backupDir, relPath)
 				os.MkdirAll(filepath.Dir(backupPath), 0755)
@@ -191,6 +198,9 @@ func Install(ctx context.Context, name string) error {
 			fmt.Println("FAILED")
 			return err
 		}
+		for d := range createdDirSet {
+			createdDirs = append(createdDirs, d)
+		}
 		fmt.Printf("OK (%d 个文件)\n", len(copiedFiles))
 	} else {
 		fmt.Println("SKIP (无扩展文件)")
@@ -199,25 +209,38 @@ func Install(ctx context.Context, name string) error {
 	// 6. 记录安装信息
 	fmt.Print("  [5/6] 记录安装信息 ... ")
 	var finalFileList []string
+	var finalDirList []string
 	if isUpgrade && installed != nil {
 		_ = json.Unmarshal([]byte(installed["file_list"].String()), &finalFileList)
-		existing := make(map[string]bool)
+		existingFiles := make(map[string]bool)
 		for _, f := range finalFileList {
-			existing[f] = true
+			existingFiles[f] = true
 		}
 		for _, f := range copiedFiles {
-			if !existing[f] {
+			if !existingFiles[f] {
 				finalFileList = append(finalFileList, f)
+			}
+		}
+		_ = json.Unmarshal([]byte(installed["dir_list"].String()), &finalDirList)
+		existingDirs := make(map[string]bool)
+		for _, d := range finalDirList {
+			existingDirs[d] = true
+		}
+		for _, d := range createdDirs {
+			if !existingDirs[d] {
+				finalDirList = append(finalDirList, d)
 			}
 		}
 	} else {
 		finalFileList = copiedFiles
+		finalDirList = createdDirs
 	}
 	fileListJSON, _ := json.Marshal(finalFileList)
+	dirListJSON, _ := json.Marshal(finalDirList)
 	_, _ = db.Exec(ctx, "DELETE FROM "+addonTable+" WHERE name=?", name)
 	_, err := db.Exec(ctx,
-		"INSERT INTO "+addonTable+" (name, version, title, status, installed_at, file_list) VALUES (?, ?, ?, 1, ?, ?)",
-		name, meta.Version, meta.Title, time.Now().Unix(), string(fileListJSON),
+		"INSERT INTO "+addonTable+" (name, version, title, status, installed_at, file_list, dir_list) VALUES (?, ?, ?, 1, ?, ?, ?)",
+		name, meta.Version, meta.Title, time.Now().Unix(), string(fileListJSON), string(dirListJSON),
 	)
 	if err != nil {
 		fmt.Println("FAILED")
@@ -320,14 +343,17 @@ func Uninstall(ctx context.Context, name string) error {
 	_ = json.Unmarshal([]byte(record["file_list"].String()), &fileList)
 	projectRoot := getProjectRoot()
 	backupDir := filepath.Join("addons", ".backup", name)
-	deleted := 0
+	deleted, failed := 0, 0
 	for _, f := range fileList {
 		destPath := filepath.Join(projectRoot, f)
 		if gfile.Exists(destPath) {
-			os.Remove(destPath)
-			deleted++
+			if err := os.Remove(destPath); err != nil {
+				fmt.Printf("\n    删除失败: %s (%v)", f, err)
+				failed++
+			} else {
+				deleted++
+			}
 		}
-		// 恢复备份
 		backupPath := filepath.Join(backupDir, f)
 		if gfile.Exists(backupPath) {
 			os.MkdirAll(filepath.Dir(destPath), 0755)
@@ -335,7 +361,26 @@ func Uninstall(ctx context.Context, name string) error {
 		}
 	}
 	os.RemoveAll(backupDir)
-	fmt.Printf("OK (删除 %d 个，已恢复备份)\n", deleted)
+
+	var dirList []string
+	_ = json.Unmarshal([]byte(record["dir_list"].String()), &dirList)
+	dirsRemoved := 0
+	if len(dirList) > 0 {
+		sort.Slice(dirList, func(i, j int) bool {
+			return strings.Count(dirList[i], string(os.PathSeparator)) >
+				strings.Count(dirList[j], string(os.PathSeparator))
+		})
+		for _, d := range dirList {
+			if err := os.Remove(filepath.Join(projectRoot, d)); err == nil {
+				dirsRemoved++
+			}
+		}
+	}
+
+	if failed > 0 {
+		fmt.Printf("\n  WARNING: %d 个文件删除失败，请手动清理\n", failed)
+	}
+	fmt.Printf("OK (删除 %d 个文件、%d 个目录，失败 %d 个)\n", deleted, dirsRemoved, failed)
 
 	// 4. 更新安装记录
 	fmt.Print("  [3/4] 更新安装记录 ... ")
@@ -364,10 +409,55 @@ func Uninstall(ctx context.Context, name string) error {
 
 func initDB(ctx context.Context) gdb.DB {
 	configPath := findConfigPath()
-	if configPath != "" {
-		g.Cfg().GetAdapter().(*gcfg.AdapterFile).SetPath(filepath.Dir(configPath))
+	if configPath == "" {
+		panic("配置文件未找到 (搜索: manifest/config/config.yaml)")
 	}
-	return g.DB()
+	content, err := os.ReadFile(configPath)
+	if err != nil {
+		panic(fmt.Sprintf("读取配置文件失败: %v", err))
+	}
+
+	var raw map[string]interface{}
+	if err := yaml.Unmarshal(content, &raw); err != nil {
+		panic(fmt.Sprintf("解析 YAML 失败: %v\n  文件: %s", err, configPath))
+	}
+	dbSection, _ := raw["database"].(map[string]interface{})
+	if dbSection == nil {
+		panic(fmt.Sprintf("配置中缺少 database 节点\n  文件: %s\n  顶层 key: %v", configPath, mapKeys(raw)))
+	}
+	defaultSection, _ := dbSection["default"].(map[string]interface{})
+	if defaultSection == nil {
+		panic(fmt.Sprintf("配置中缺少 database.default 节点\n  database 下的 key: %v", mapKeys(dbSection)))
+	}
+	link, _ := defaultSection["link"].(string)
+	if link == "" {
+		panic(fmt.Sprintf("database.default.link 为空\n  default 下的 key: %v", mapKeys(defaultSection)))
+	}
+	prefix, _ := defaultSection["Prefix"].(string)
+	if prefix == "" {
+		prefix, _ = defaultSection["prefix"].(string)
+	}
+	debug, _ := defaultSection["debug"].(bool)
+
+	parsedLink = link
+	gdb.SetConfig(gdb.Config{
+		"default": gdb.ConfigGroup{
+			{Link: link, Prefix: prefix, Debug: debug},
+		},
+	})
+	db, err := gdb.Instance()
+	if err != nil {
+		panic(fmt.Sprintf("数据库连接失败: %v\n  link: %s", err, link))
+	}
+	return db
+}
+
+func mapKeys(m map[string]interface{}) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	return keys
 }
 
 func findConfigPath() string {
@@ -381,11 +471,14 @@ func findConfigPath() string {
 }
 
 func detectDBType(ctx context.Context) string {
-	cfg := g.Cfg().MustGet(ctx, "database.default.0.link", "").String()
-	if cfg == "" {
-		cfg = g.Cfg().MustGet(ctx, "database.default.link", "").String()
+	link := parsedLink
+	if link == "" {
+		link = g.Cfg().MustGet(ctx, "database.default.0.link", "").String()
+		if link == "" {
+			link = g.Cfg().MustGet(ctx, "database.default.link", "").String()
+		}
 	}
-	if strings.HasPrefix(strings.ToLower(cfg), "pgsql:") || strings.HasPrefix(strings.ToLower(cfg), "postgres:") {
+	if strings.HasPrefix(strings.ToLower(link), "pgsql:") || strings.HasPrefix(strings.ToLower(link), "postgres:") {
 		return "pgsql"
 	}
 	return "mysql"
@@ -400,6 +493,25 @@ func getProjectRoot() string {
 	return abs
 }
 
+// collectNewDirs 检查 relFilePath 的各级父目录中，哪些在 root 下尚不存在，
+// 返回这些目录的相对路径（用于卸载时清理）。必须在 os.MkdirAll 之前调用。
+func collectNewDirs(root, relFilePath string) []string {
+	dir := filepath.Dir(relFilePath)
+	if dir == "." {
+		return nil
+	}
+	var newDirs []string
+	parts := strings.Split(dir, string(os.PathSeparator))
+	current := root
+	for i := range parts {
+		current = filepath.Join(current, parts[i])
+		if !gfile.Exists(current) {
+			newDirs = append(newDirs, filepath.Join(parts[:i+1]...))
+		}
+	}
+	return newDirs
+}
+
 func ensureAddonTable(ctx context.Context, db gdb.DB) {
 	dbType := detectDBType(ctx)
 	var sql string
@@ -412,7 +524,8 @@ func ensureAddonTable(ctx context.Context, db gdb.DB) {
 			status smallint NOT NULL DEFAULT 1,
 			installed_at bigint NOT NULL DEFAULT 0,
 			uninstalled_at bigint NOT NULL DEFAULT 0,
-			file_list text
+			file_list text,
+			dir_list text
 		)`
 	} else {
 		sql = "CREATE TABLE IF NOT EXISTS `xy_addon` (" +
@@ -424,11 +537,18 @@ func ensureAddonTable(ctx context.Context, db gdb.DB) {
 			"`installed_at` bigint NOT NULL DEFAULT 0," +
 			"`uninstalled_at` bigint NOT NULL DEFAULT 0," +
 			"`file_list` text," +
+			"`dir_list` text," +
 			"PRIMARY KEY (`id`)," +
 			"UNIQUE KEY `uk_name` (`name`)" +
 			") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
 	}
 	db.Exec(ctx, sql)
+
+	if dbType == "pgsql" {
+		db.Exec(ctx, "ALTER TABLE xy_addon ADD COLUMN IF NOT EXISTS dir_list text")
+	} else {
+		db.Exec(ctx, "ALTER TABLE `xy_addon` ADD COLUMN `dir_list` text")
+	}
 }
 
 func unzip(src, dest string) error {
