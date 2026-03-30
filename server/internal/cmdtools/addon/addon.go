@@ -198,7 +198,22 @@ func Install(ctx context.Context, name string) error {
 
 	// 6. 记录安装信息
 	fmt.Print("  [5/6] 记录安装信息 ... ")
-	fileListJSON, _ := json.Marshal(copiedFiles)
+	var finalFileList []string
+	if isUpgrade && installed != nil {
+		_ = json.Unmarshal([]byte(installed["file_list"].String()), &finalFileList)
+		existing := make(map[string]bool)
+		for _, f := range finalFileList {
+			existing[f] = true
+		}
+		for _, f := range copiedFiles {
+			if !existing[f] {
+				finalFileList = append(finalFileList, f)
+			}
+		}
+	} else {
+		finalFileList = copiedFiles
+	}
+	fileListJSON, _ := json.Marshal(finalFileList)
 	_, _ = db.Exec(ctx, "DELETE FROM "+addonTable+" WHERE name=?", name)
 	_, err := db.Exec(ctx,
 		"INSERT INTO "+addonTable+" (name, version, title, status, installed_at, file_list) VALUES (?, ?, ?, 1, ?, ?)",
