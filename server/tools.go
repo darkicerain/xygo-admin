@@ -6,11 +6,12 @@
 // | 用途：提供交互式工具菜单，支持数据库迁移、模板检查等开发辅助命令
 // |
 // | 使用方式：
-// |   gf run tools.go                 -- 交互式选择命令
-// |   gf run tools.go migrate up      -- 直接执行迁移
-// |   gf run tools.go migrate status  -- 查看迁移状态
-// |   gf run tools.go migrate history -- 查看迁移历史
-// |   gf run tools.go check-tpl       -- 检查模板语法
+// |   go run tools.go                 -- 交互式选择命令
+// |   go run tools.go migrate up      -- 直接执行迁移
+// |   go run tools.go migrate status  -- 查看迁移状态
+// |   go run tools.go migrate history -- 查看迁移历史
+// |   go run tools.go check-tpl       -- 检查模板语法
+// |   go run tools.go update          -- 在线更新
 // +----------------------------------------------------------------------
 
 package main
@@ -86,15 +87,25 @@ func main() {
 		case "4":
 			_ = checktpl.Run(ctx)
 		case "5":
-			_ = addon.Install(ctx, "")
+			if err := addon.Install(ctx, ""); err != nil {
+				fmt.Printf("  错误: %v\n", err)
+			} else {
+				return
+			}
 		case "6":
-			_ = addon.Uninstall(ctx, "")
+			if err := addon.Uninstall(ctx, ""); err != nil {
+				fmt.Printf("  错误: %v\n", err)
+			} else {
+				return
+			}
 		case "7":
-			_ = updater.RunUpdate(ctx)
+			applied, _ := updater.RunUpdate(ctx)
+			if applied {
+				return
+			}
 		case "0", "exit", "quit", "q":
 			fmt.Println("  Bye!")
-			fmt.Println("  提示：按 Ctrl+C 或关闭终端退出 gf run 监控进程")
-			os.Exit(0)
+			return
 		default:
 			fmt.Println("  无效选项，请重新选择")
 		}
@@ -125,19 +136,23 @@ func runCommand(cmd, sub string) {
 			if len(os.Args) > 3 {
 				addonName = os.Args[3]
 			}
-			_ = addon.Install(ctx, addonName)
+			if err := addon.Install(ctx, addonName); err != nil {
+				fmt.Printf("  错误: %v\n", err)
+			}
 		case "uninstall":
 			addonName := ""
 			if len(os.Args) > 3 {
 				addonName = os.Args[3]
 			}
-			_ = addon.Uninstall(ctx, addonName)
+			if err := addon.Uninstall(ctx, addonName); err != nil {
+				fmt.Printf("  错误: %v\n", err)
+			}
 		default:
 			fmt.Printf("  未知的 addon 子命令: %s\n", sub)
 			fmt.Println("  可用: install / uninstall")
 		}
 	case "update":
-		_ = updater.RunUpdate(ctx)
+		_, _ = updater.RunUpdate(ctx)
 	default:
 		fmt.Printf("  未知命令: %s\n", cmd)
 		fmt.Println("  可用: migrate / check-tpl / addon / update")

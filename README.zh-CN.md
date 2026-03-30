@@ -112,21 +112,22 @@ XYGo Admin 是一款全栈开源中后台管理框架，前端基于 [Art Design
 ```
 xygoadmin/
 ├── server/                    # 后端 GoFrame 项目
+│   ├── addons/                # 扩展包目录（*.zip）
 │   ├── api/                   # API 接口定义
 │   ├── internal/
 │   │   ├── cmd/               # 主命令入口
-│   │   ├── cmdtools/          # 工具命令逻辑（迁移、模板检查）
+│   │   ├── cmdtools/          # 工具命令逻辑（迁移、扩展、在线更新）
 │   │   ├── controller/        # 控制器（请求处理）
 │   │   ├── logic/             # 业务逻辑（核心代码在这里）
 │   │   ├── model/             # 数据模型（entity/do/input）
 │   │   ├── dao/               # 数据访问层（gf gen dao 自动生成）
 │   │   └── service/           # 服务接口（gf gen service 自动生成）
-│   ├── cmd_tools/migrate/     # 迁移 SQL 文件 + 编写指南
+│   ├── cmd_tools/migrate/     # 迁移 SQL 文件
 │   ├── manifest/config/       # 运行时配置文件
 │   ├── hack/config.yaml       # CLI 工具配置（build/gen）
-│   ├── resource/              # 静态资源、代码生成模板、SQL
+│   ├── resource/              # 静态资源、代码生成模板
 │   ├── main.go                # 服务启动入口（gf run main.go）
-│   └── tools.go               # 工具命令入口（gf run tools.go）
+│   └── tools.go               # 工具命令入口（go run tools.go）
 ├── web/                       # 前端 Vue3 项目
 │   ├── src/
 │   │   ├── api/               # API 请求封装
@@ -136,8 +137,24 @@ xygoadmin/
 │   │   └── components/        # 通用组件
 │   └── ...
 ├── mysql_install.sql           # MySQL 初始化脚本
-└── pgsql_install.sql           # PostgreSQL 初始化脚本
+├── pgsql_install.sql           # PostgreSQL 初始化脚本
+└── version.json                # 版本信息（用于在线更新）
 ```
+
+### 工具命令
+
+在 `server/` 目录下通过 `go run tools.go` 使用：
+
+| 命令 | 说明 |
+|------|------|
+| `go run tools.go` | 交互式菜单 |
+| `go run tools.go migrate up` | 执行数据库迁移 |
+| `go run tools.go migrate status` | 查看迁移状态 |
+| `go run tools.go migrate history` | 查看迁移历史 |
+| `go run tools.go check-tpl` | 检查模板语法 |
+| `go run tools.go update` | 在线更新 |
+| `go run tools.go addon install tenant` | 安装扩展 |
+| `go run tools.go addon uninstall tenant` | 卸载扩展 |
 
 ### 联系我们
 

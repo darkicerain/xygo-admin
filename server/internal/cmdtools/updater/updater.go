@@ -29,7 +29,7 @@ import (
 )
 
 const (
-	defaultIndexURL = "https://xygoupload.xingyunwangluo.com/updates/update-index.json"
+	defaultIndexURL = "https://xygoupload.xingyunwangluo.com/updates/open/update-index.json"
 	httpTimeout     = 30 * time.Second
 )
 
@@ -71,13 +71,19 @@ type UpdateMeta struct {
 
 // ==================== 主入口 ====================
 
-func RunUpdate(ctx context.Context) error {
+// isVersionMarkerFile 项目根目录的版本标记文件，更新时必须覆盖，不参与冲突交互。
+func isVersionMarkerFile(relPath string) bool {
+	return filepath.ToSlash(relPath) == "version.json"
+}
+
+// RunUpdate 执行在线更新。若成功应用至少一个版本补丁，applied 为 true。
+func RunUpdate(ctx context.Context) (applied bool, err error) {
 	projectRoot := getProjectRoot()
 
 	// 1. 读取本地版本
 	localVersion, err := readLocalVersion(projectRoot)
 	if err != nil {
-		return fmt.Errorf("读取本地版本失败: %v", err)
+		return false, fmt.Errorf("读取本地版本失败: %v", err)
 	}
 
 	fmt.Println()
@@ -92,7 +98,9 @@ func RunUpdate(ctx context.Context) error {
 	index, err := fetchUpdateIndex()
 	if err != nil {
 		fmt.Println("FAILED")
-		return fmt.Errorf("获取更新索引失败: %v", err)
+		fmt.Printf("  错误: %v\n", err)
+		fmt.Printf("  请求地址: %s\n", defaultIndexURL)
+		return false, err
 	}
 	fmt.Println("OK")
 
@@ -100,7 +108,7 @@ func RunUpdate(ctx context.Context) error {
 	edition, ok := index.Editions[localVersion.Edition]
 	if !ok {
 		fmt.Printf("  远程索引中无 %s 版本的更新\n", localVersion.Edition)
-		return nil
+		return false, nil
 	}
 
 	var pending []UpdateEntry
@@ -112,7 +120,7 @@ func RunUpdate(ctx context.Context) error {
 
 	if len(pending) == 0 {
 		fmt.Printf("  已是最新版本 v%s\n", localVersion.Version)
-		return nil
+		return false, nil
 	}
 
 	// 4. 展示更新内容
@@ -135,26 +143,31 @@ func RunUpdate(ctx context.Context) error {
 		}
 
 		if err := applyUpdate(ctx, projectRoot, localVersion, u); err != nil {
-			return fmt.Errorf("更新到 v%s 失败: %v", u.Version, err)
+			return applied, fmt.Errorf("更新到 v%s 失败: %v", u.Version, err)
 		}
 
 		localVersion.Version = u.Version
 		localVersion.UpdatedAt = time.Now().Format("2006-01-02")
 		saveLocalVersion(projectRoot, localVersion)
+		applied = true
 	}
 
-	fmt.Println()
-	fmt.Println("  ════════════════════════════════════════")
-	fmt.Printf("  更新完成！当前版本: v%s\n", localVersion.Version)
-	fmt.Println("  ════════════════════════════════════════")
-	fmt.Println()
-	fmt.Println("  请依次执行:")
-	fmt.Println("    1. gf gen dao")
-	fmt.Println("    2. gf gen service")
-	fmt.Println("    3. 重启服务")
-	fmt.Println()
+	if applied {
+		fmt.Println()
+		fmt.Println("  ════════════════════════════════════════")
+		fmt.Printf("  更新完成！当前版本: v%s\n", localVersion.Version)
+		fmt.Println("  ════════════════════════════════════════")
+		fmt.Println()
+		fmt.Println("  旧文件备份位置: server/resource/update/backup/")
+		fmt.Println()
+		fmt.Println("  请依次执行:")
+		fmt.Println("    1. gf gen dao")
+		fmt.Println("    2. gf gen service")
+		fmt.Println("    3. 重启服务")
+		fmt.Println()
+	}
 
-	return nil
+	return applied, nil
 }
 
 // ==================== 单版本更新逻辑 ====================
@@ -169,6 +182,7 @@ func applyUpdate(ctx context.Context, projectRoot string, local *VersionInfo, en
 
 	if err := downloadFile(entry.URL, entry.Mirrors, zipPath); err != nil {
 		fmt.Println("FAILED")
+		fmt.Printf("  错误: %v\n", err)
 		return err
 	}
 	fmt.Println("OK")
@@ -178,6 +192,7 @@ func applyUpdate(ctx context.Context, projectRoot string, local *VersionInfo, en
 	tmpDir := filepath.Join(updateDir, "tmp", entry.Version)
 	if err := unzip(zipPath, tmpDir); err != nil {
 		fmt.Println("FAILED")
+		fmt.Printf("  错误: %v\n", err)
 		return err
 	}
 	fmt.Println("OK")
@@ -227,7 +242,11 @@ func applyUpdate(ctx context.Context, projectRoot string, local *VersionInfo, en
 				localHash := fileHash(localPath)
 
 				if hasChecksum && localHash != origHash {
-					conflictFiles = append(conflictFiles, relPath)
+					if isVersionMarkerFile(relPath) {
+						modifiedFiles = append(modifiedFiles, relPath)
+					} else {
+						conflictFiles = append(conflictFiles, relPath)
+					}
 				} else {
 					modifiedFiles = append(modifiedFiles, relPath)
 				}
@@ -304,7 +323,7 @@ func applyUpdate(ctx context.Context, projectRoot string, local *VersionInfo, en
 
 	// 6. 执行数据库迁移
 	fmt.Print("  [5/5] 数据库迁移 ... ")
-	if err := migrate.RunUp(ctx); err != nil {
+	if err := migrate.RunUp(ctx, false); err != nil {
 		fmt.Printf("WARNING: %v\n", err)
 	} else {
 		fmt.Println("OK")

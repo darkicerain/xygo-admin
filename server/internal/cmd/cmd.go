@@ -25,6 +25,7 @@ import (
 	"xygo/internal/controller/member"
 	"xygo/internal/controller/site"
 	"xygo/internal/controller/system"
+	tenantCtrl "xygo/internal/controller/tenant"
 	"xygo/internal/controller/wm"
 	"xygo/internal/library/cache"
 	"xygo/internal/library/monitor"
@@ -122,10 +123,27 @@ var (
 			})
 			})
 
+			// =============== 租户管理接口（扩展预埋，安装租户扩展后生效） ===============
+			s.Group("/", func(group *ghttp.RouterGroup) {
+				group.Middleware(
+					middleware.CORS,
+					middleware.ResponseHandler,
+					middleware.TenantResolve,
+					middleware.TenantAdminAuth,
+				)
+				group.Bind(tenantCtrl.NewV1())
+			})
+
 			// =============== WebSocket 端点 ===============
 			s.Group("/socket", func(group *ghttp.RouterGroup) {
 				group.Middleware(middleware.CORS)
 				group.Middleware(middleware.WsAuth)
+				group.GET("/", websocket.WsHandler)
+			})
+
+			// =============== 租户 WebSocket（扩展预埋） ===============
+			s.Group("/tenant-socket", func(group *ghttp.RouterGroup) {
+				group.Middleware(middleware.CORS, middleware.WsTenantAuth)
 				group.GET("/", websocket.WsHandler)
 			})
 

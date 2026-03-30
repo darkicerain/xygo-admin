@@ -6799,5 +6799,31 @@ SELECT pg_catalog.setval('public.xy_cms_doc_id_seq', 1, false);
 -- PostgreSQL database dump complete
 --
 
+-- ============================================================
+-- xy_migration: 数据库迁移版本记录
+-- ============================================================
+CREATE TABLE IF NOT EXISTS xy_migration (
+    id bigserial PRIMARY KEY,
+    version varchar(32) NOT NULL UNIQUE,
+    name varchar(128) NOT NULL DEFAULT '',
+    executed_at bigint NOT NULL DEFAULT 0,
+    checksum varchar(64) NOT NULL DEFAULT '',
+    success smallint NOT NULL DEFAULT 1
+);
+
+-- ============================================================
+-- xy_addon: 扩展安装记录
+-- ============================================================
+CREATE TABLE IF NOT EXISTS xy_addon (
+    id bigserial PRIMARY KEY,
+    name varchar(64) NOT NULL UNIQUE,
+    version varchar(32) NOT NULL DEFAULT '',
+    title varchar(128) NOT NULL DEFAULT '',
+    status smallint NOT NULL DEFAULT 1,
+    installed_at bigint NOT NULL DEFAULT 0,
+    uninstalled_at bigint NOT NULL DEFAULT 0,
+    file_list text
+);
+
 -- end of dump
 

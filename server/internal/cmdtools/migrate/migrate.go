@@ -34,7 +34,7 @@ type Migration struct {
 	Content string
 }
 
-func RunUp(ctx context.Context) error {
+func RunUp(ctx context.Context, interactive ...bool) error {
 	db, migrations, err := prepare(ctx)
 	if err != nil {
 		return err
@@ -113,7 +113,9 @@ func RunUp(ctx context.Context) error {
 	fmt.Println("========================================")
 	fmt.Println()
 
-	askRunGenDao()
+	if len(interactive) == 0 || interactive[0] {
+		askRunGenDao()
+	}
 	return nil
 }
 

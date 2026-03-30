@@ -38,11 +38,12 @@ import (
 const addonTable = "xy_addon"
 
 type AddonMeta struct {
-	Name        string `yaml:"name"`
-	Version     string `yaml:"version"`
-	Title       string `yaml:"title"`
-	Description string `yaml:"description"`
-	Author      string `yaml:"author"`
+	Name           string `yaml:"name"`
+	Version        string `yaml:"version"`
+	Title          string `yaml:"title"`
+	Description    string `yaml:"description"`
+	Author         string `yaml:"author"`
+	MinUpgradeFrom string `yaml:"min_upgrade_from"`
 }
 
 func Install(ctx context.Context, name string) error {
@@ -93,42 +94,64 @@ func Install(ctx context.Context, name string) error {
 	}
 	fmt.Printf("OK (%s v%s)\n", meta.Title, meta.Version)
 
-	// 3. 检查是否已安装
+	// 3. 检查是否已安装，判断安装/升级/覆盖
 	db := initDB(ctx)
 	ensureAddonTable(ctx, db)
 	installed, _ := db.GetOne(ctx, "SELECT * FROM "+addonTable+" WHERE name=? AND status=1", name)
+
+	isUpgrade := false
 	if installed != nil {
-		confirm := gcmd.Scan(fmt.Sprintf("  扩展 %s 已安装(v%s)，是否覆盖安装？[y/N] ", name, installed["version"].String()))
-		if strings.ToLower(strings.TrimSpace(confirm)) != "y" {
-			fmt.Println("  取消安装")
+		installedVer := installed["version"].String()
+		cmp := compareVersion(meta.Version, installedVer)
+		if cmp > 0 {
+			fmt.Printf("  检测到已安装 v%s，新版本 v%s\n", installedVer, meta.Version)
+			confirm := gcmd.Scan(fmt.Sprintf("  确认升级 v%s → v%s？[Y/n] ", installedVer, meta.Version))
+			if strings.ToLower(strings.TrimSpace(confirm)) == "n" {
+				fmt.Println("  取消升级")
+				return nil
+			}
+			isUpgrade = true
+		} else if cmp == 0 {
+			confirm := gcmd.Scan(fmt.Sprintf("  扩展 %s 已是 v%s，是否覆盖重装？[y/N] ", name, installedVer))
+			if strings.ToLower(strings.TrimSpace(confirm)) != "y" {
+				fmt.Println("  取消安装")
+				return nil
+			}
+		} else {
+			fmt.Printf("  当前已安装 v%s，包版本 v%s 更低，不支持降级\n", installedVer, meta.Version)
 			return nil
 		}
 	}
 
-	// 4. 执行安装 SQL
-	fmt.Print("  [3/6] 执行数据库变更 ... ")
+	// 4. 执行数据库变更
 	dbType := detectDBType(ctx)
-	sqlBase := filepath.Join(tmpDir, name, "install")
-	if !gfile.Exists(sqlBase) {
-		sqlBase = filepath.Join(tmpDir, "install")
+	var sqlDir string
+	if isUpgrade {
+		fmt.Print("  [3/6] 执行增量升级 SQL ... ")
+		sqlDir = filepath.Join(tmpDir, name, "upgrade")
+		if !gfile.Exists(sqlDir) {
+			sqlDir = filepath.Join(tmpDir, "upgrade")
+		}
+	} else {
+		fmt.Print("  [3/6] 执行数据库变更 ... ")
+		sqlDir = filepath.Join(tmpDir, name, "install")
+		if !gfile.Exists(sqlDir) {
+			sqlDir = filepath.Join(tmpDir, "install")
+		}
 	}
-	sqlFile := filepath.Join(sqlBase, dbType+".sql")
+	sqlFile := filepath.Join(sqlDir, dbType+".sql")
 	if gfile.Exists(sqlFile) {
-		sqlContent, _ := os.ReadFile(sqlFile)
-		stmts := splitStatements(string(sqlContent))
-		for _, stmt := range stmts {
-			stmt = strings.TrimSpace(stmt)
-			if stmt == "" || isCommentOnly(stmt) {
-				continue
-			}
-			if _, err := db.Exec(ctx, stmt); err != nil {
-				fmt.Println("FAILED")
-				return fmt.Errorf("SQL 执行失败: %v\n  语句: %s", err, truncate(stmt, 200))
-			}
+		if err := execSQLFile(ctx, db, sqlFile); err != nil {
+			fmt.Println("FAILED")
+			return err
 		}
 		fmt.Println("OK")
 	} else {
-		fmt.Println("SKIP (无安装 SQL)")
+		if isUpgrade {
+			fmt.Println("SKIP (无升级 SQL)")
+		} else {
+			fmt.Println("SKIP (无安装 SQL)")
+		}
 	}
 
 	// 5. 复制文件
@@ -192,7 +215,11 @@ func Install(ctx context.Context, name string) error {
 	fmt.Println()
 	fmt.Println()
 	fmt.Println("  ════════════════════════════════════════")
-	fmt.Printf("  扩展 %s v%s 安装完成！\n", meta.Title, meta.Version)
+	action := "安装"
+	if isUpgrade {
+		action = "升级"
+	}
+	fmt.Printf("  扩展 %s v%s %s完成！\n", meta.Title, meta.Version, action)
 	fmt.Println("  ════════════════════════════════════════")
 	fmt.Println()
 	fmt.Println("  请依次执行以下操作：")
@@ -401,11 +428,15 @@ func unzip(src, dest string) error {
 		if !strings.HasPrefix(filepath.Clean(fpath), filepath.Clean(dest)+string(os.PathSeparator)) {
 			return fmt.Errorf("非法路径: %s", f.Name)
 		}
-		if f.FileInfo().IsDir() {
+		if f.FileInfo().IsDir() || f.UncompressedSize64 == 0 && strings.HasSuffix(f.Name, "/") {
 			os.MkdirAll(fpath, 0755)
 			continue
 		}
 		os.MkdirAll(filepath.Dir(fpath), 0755)
+		if f.UncompressedSize64 == 0 {
+			os.MkdirAll(fpath, 0755)
+			continue
+		}
 		outFile, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
 		if err != nil {
 			return err
@@ -468,7 +499,12 @@ func splitStatements(sql string) []string {
 				current.WriteString(line + "\n")
 			}
 		} else {
-			if strings.HasSuffix(trimmed, ";") && !strings.HasPrefix(upper, "--") {
+			if trimmed == "" {
+				if s := strings.TrimSpace(current.String()); s != "" && isCommentOnly(s) {
+					current.Reset()
+				}
+				current.WriteString(line + "\n")
+			} else if strings.HasSuffix(trimmed, ";") && !strings.HasPrefix(upper, "--") {
 				current.WriteString(line + "\n")
 				s := strings.TrimSpace(current.String())
 				s = strings.TrimSuffix(s, ";")
@@ -505,4 +541,49 @@ func truncate(s string, maxLen int) string {
 		return s
 	}
 	return s[:maxLen] + "..."
+}
+
+func execSQLFile(ctx context.Context, db gdb.DB, sqlFile string) error {
+	sqlContent, _ := os.ReadFile(sqlFile)
+	stmts := splitStatements(string(sqlContent))
+	for _, stmt := range stmts {
+		stmt = strings.TrimSpace(stmt)
+		if stmt == "" || isCommentOnly(stmt) {
+			continue
+		}
+		if _, err := db.Exec(ctx, stmt); err != nil {
+			errMsg := err.Error()
+			if strings.Contains(errMsg, "already exists") ||
+				strings.Contains(errMsg, "已存在") ||
+				strings.Contains(errMsg, "多个主键") ||
+				strings.Contains(errMsg, "duplicate key") ||
+				strings.Contains(errMsg, "重复键") {
+				continue
+			}
+			return fmt.Errorf("SQL 执行失败: %v\n  语句: %s", err, truncate(stmt, 200))
+		}
+	}
+	return nil
+}
+
+func compareVersion(a, b string) int {
+	ap := strings.Split(a, ".")
+	bp := strings.Split(b, ".")
+	maxLen := len(ap)
+	if len(bp) > maxLen {
+		maxLen = len(bp)
+	}
+	for i := 0; i < maxLen; i++ {
+		av, bv := 0, 0
+		if i < len(ap) {
+			fmt.Sscanf(ap[i], "%d", &av)
+		}
+		if i < len(bp) {
+			fmt.Sscanf(bp[i], "%d", &bv)
+		}
+		if av != bv {
+			return av - bv
+		}
+	}
+	return 0
 }

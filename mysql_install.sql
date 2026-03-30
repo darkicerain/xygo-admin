@@ -2170,6 +2170,36 @@ ALTER TABLE `xy_cms_doc`
 
 COMMIT;
 
+-- ============================================================
+-- xy_migration: 数据库迁移版本记录
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `xy_migration` (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `version` varchar(32) NOT NULL,
+  `name` varchar(128) NOT NULL DEFAULT '',
+  `executed_at` bigint NOT NULL DEFAULT 0,
+  `checksum` varchar(64) NOT NULL DEFAULT '',
+  `success` tinyint NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_version` (`version`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='数据库迁移记录';
+
+-- ============================================================
+-- xy_addon: 扩展安装记录
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `xy_addon` (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name` varchar(64) NOT NULL,
+  `version` varchar(32) NOT NULL DEFAULT '',
+  `title` varchar(128) NOT NULL DEFAULT '',
+  `status` tinyint NOT NULL DEFAULT 1,
+  `installed_at` bigint NOT NULL DEFAULT 0,
+  `uninstalled_at` bigint NOT NULL DEFAULT 0,
+  `file_list` text,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_name` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='扩展安装记录';
+
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
