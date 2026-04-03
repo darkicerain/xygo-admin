@@ -409,6 +409,7 @@
      */
     const resetForm = (): void => {
       formRef.value?.reset()
+      form.id = 0
       form.menuType = 'menu'
     }
   
@@ -508,6 +509,7 @@
             form.resource = props.editData?.resource || ''
           } else {
             // 新建模式，使用parentMenu
+            form.id = 0
             form.parentId = props.parentMenu?.id || null
             form.resource = ''
           }
