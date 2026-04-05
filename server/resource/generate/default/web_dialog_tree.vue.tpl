@@ -49,6 +49,45 @@
       <ElFormItem label="{{.Label}}" prop="{{.TsName}}">
         <ElInput v-model="formData.{{.TsName}}" type="textarea" :rows="3" placeholder="请输入{{.Label}}" />
       </ElFormItem>
+{{- else if eq .DesignType "remoteSelect"}}
+      <ElFormItem label="{{.Label}}" prop="{{.TsName}}">
+        <ElSelect
+          v-model="formData.{{.TsName}}"
+          filterable
+          remote
+          :remote-method="(q: string) => load{{.RelationName}}Options(q)"
+          placeholder="请选择{{.Label}}"
+          clearable
+          :loading="{{.RelationAlias}}Loading"
+        >
+          <ElOption
+            v-for="opt in {{.RelationAlias}}Options"
+            :key="opt.value"
+            :label="opt.label"
+            :value="opt.value"
+          />
+        </ElSelect>
+      </ElFormItem>
+{{- else if eq .DesignType "remoteSelects"}}
+      <ElFormItem label="{{.Label}}" prop="{{.TsName}}">
+        <ElSelect
+          v-model="formData.{{.TsName}}"
+          filterable
+          remote
+          multiple
+          :remote-method="(q: string) => load{{.RelationName}}Options(q)"
+          placeholder="请选择{{.Label}}"
+          clearable
+          :loading="{{.RelationAlias}}Loading"
+        >
+          <ElOption
+            v-for="opt in {{.RelationAlias}}Options"
+            :key="opt.value"
+            :label="opt.label"
+            :value="opt.value"
+          />
+        </ElSelect>
+      </ElFormItem>
 {{- else if or (eq .DesignType "select") (eq .DesignType "selects")}}
       <ElFormItem label="{{.Label}}" prop="{{.TsName}}">
         <ElSelect v-model="formData.{{.TsName}}" placeholder="请选择{{.Label}}" clearable{{if eq .DesignType "selects"}} multiple{{end}}>
@@ -87,7 +126,7 @@
   import type { FormInstance, FormRules } from 'element-plus'
   import ArtFileSelector from '@/components/core/forms/art-file-selector/index.vue'
   import ArtIconSelector from '@/components/core/forms/art-icon-selector/index.vue'
-
+  import { adminRequest } from '@/utils/http'
   const props = defineProps<{
     visible: boolean
     type: 'add' | 'edit'
@@ -132,8 +171,38 @@
 {{- end}}
   })
 
+
+
+{{- if .HasRelations}}
+
+  // ==================== 远程下拉选项 ====================
+{{- range $rel := .Relations}}
+  const {{$rel.RelationAlias}}Options = ref<{ value: any; label: string }[]>([])
+  const {{$rel.RelationAlias}}Loading = ref(false)
+  const load{{$rel.RelationName}}Options = async (query: string) => {
+    {{$rel.RelationAlias}}Loading.value = true
+    try {
+      const res = await adminRequest.get<any>({
+        url: '/{{$rel.RelationApiPath}}/list',
+        params: { pageSize: 50, {{$rel.RemoteField}}: query || undefined }
+      })
+      {{$rel.RelationAlias}}Options.value = (res.list || []).map((item: any) => ({
+        value: item.{{$rel.RemotePk}},
+        label: item.{{$rel.RemoteField}},
+      }))
+    } catch { /* ignore */ }
+    {{$rel.RelationAlias}}Loading.value = false
+  }
+{{- end}}
+{{- end}}
   watch(() => props.visible, (val) => {
     if (val && props.type === 'edit' && props.editData) {
+    {{- if .HasRelations}}
+          // 编辑时加载已选关联项
+    {{- range $rel := .Relations}}
+          load{{$rel.RelationName}}Options('')
+    {{- end}}
+    {{- end}}
       Object.assign(formData, props.editData)
     } else if (val && props.type === 'add' && props.editData) {
       // 新增子项时继承父ID
@@ -141,6 +210,11 @@
       if (props.editData.{{.TreePidTsColumn}} !== undefined) {
         newData.{{.TreePidTsColumn}} = props.editData.{{.TreePidTsColumn}}
       }
+      {{- if .HasRelations}}
+      {{- range $rel := .Relations}}
+            load{{$rel.RelationName}}Options('')
+      {{- end}}
+      {{- end}}
       Object.assign(formData, newData)
     } else if (val) {
       Object.assign(formData, defaultForm())
